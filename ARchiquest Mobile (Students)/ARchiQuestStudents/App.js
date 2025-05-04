@@ -6,7 +6,7 @@ import WelcomeScreen from './WelcomeScreen';
 import Dashboard from './Dashboard/Dashboard';
 import Progress from './StudentProgressMonitoring/Progress';
 import InsightPanel from './StudentProgressMonitoring/InsightPanel';
-import FacultyDashboard from './StudentProgressMonitoring/FacultyDashboard';
+import StudentProgress from './StudentProgressMonitoring/StudentProgress';
 import DesignPlan from './UploadDesign/DesignPlan';
 import MaterialsTab from './UploadDesign/MaterialsTab';
 import MainLandingPage from './Dashboard/mainLanding';
@@ -23,7 +23,7 @@ export default function App() {
         <Stack.Screen name='Dashboard' component={Dashboard} /> 
         <Stack.Screen name='Progress' component={Progress} />
         <Stack.Screen name='InsightPanel' component={InsightPanel} />
-        <Stack.Screen name='FacultyDashboard' component={FacultyDashboard} />
+        <Stack.Screen name='StudentProgress' component={StudentProgress} />
         <Stack.Screen name='DesignPlan' component={DesignPlan} />
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
         <Stack.Screen name="MainLandingPage" component={MainLandingPage} />
