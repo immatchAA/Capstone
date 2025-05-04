@@ -1,0 +1,218 @@
+.createdesign-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: #EEF5FF;
+  }
+  
+  .createdesign-content {
+    flex: 1;
+    padding: 40px;
+  }
+  
+  .createdesign-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .createdesign-header h1 {
+    font-size: 2rem;
+    color: #176BB7;
+  }
+  
+  .createdesign-header p {
+    font-size: 0.95rem;
+    color: #666;
+  }
+  
+  .createdesign-create-btn {
+    padding: 10px 20px;
+    background-color: #176BB7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .createdesign-create-btn:hover {
+    background-color: #145a99;
+  }
+  
+  .createdesign-table-container {
+    overflow-x: auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+  }
+  
+  .createdesign-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+  }
+
+  .createdesign-table thead {
+    background-color: #f5f7fa;
+  }
+  
+  .createdesign-table th,
+  .createdesign-table td {
+    padding: 15px;
+    text-align: left;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle; /* <<< THIS aligns content to middle! */
+  }
+
+  .createdesign-table th:last-child {
+    text-align: center;
+  }
+
+  .createdesign-table td:last-child {
+    text-align: center;
+  }
+  
+  .createdesign-table th {
+    background-color: #f5f7fa;
+    color: #176BB7;
+    font-weight: 600;
+  }
+  
+  .clickable-row td {
+    cursor: pointer;
+  }
+  
+  .clickable-row:hover td {
+    background-color: #f0f8ff;
+  }
+  
+  .createdesign-action-buttons {
+    display: flex;
+    align-items: center;  /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    height: 100%;  /* Important to fill the table cell height */
+    gap: 20px;
+  }
+  
+  .createdesign-action-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #176BB7;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+  
+  .createdesign-action-btn:hover {
+    transform: scale(1.2);
+    color: #145a99;
+  }
+  
+  .createdesign-action-btn.delete-btn {
+    color: #e74c3c;
+  }
+  
+  .createdesign-action-btn.delete-btn:hover {
+    color: #c0392b;
+  }
+
+  .createdesign-table tbody tr:hover {
+    background-color: #eef5ff;
+    transition: background-color 0.3s;
+    cursor: pointer;
+  }
+  
+  .createdesign-blur-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    backdrop-filter: blur(5px);
+    background-color: rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+  
+  .createdesign-modal-card {
+    background: #ffffff;
+    padding: 30px 40px;
+    border-radius: 20px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: popupAnimation 0.3s ease-out forwards;
+  }
+  
+  .createdesign-modal-card h2 {
+    font-size: 1.5rem;
+    color: #176BB7;
+    text-align: center;
+  }
+  
+  .createdesign-modal-card input {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    width: 100%;
+    background-color: #f5f7fa;
+  }
+  
+  .createdesign-modal-buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .createdesign-save-btn,
+  .createdesign-cancel-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .createdesign-save-btn {
+    background-color: #176BB7;
+    color: white;
+  }
+  
+  .createdesign-save-btn:hover {
+    background-color: #145a99;
+  }
+  
+  .createdesign-cancel-btn {
+    background-color: #ccc;
+    color: #333;
+  }
+  
+  .createdesign-cancel-btn:hover {
+    background-color: #bbb;
+  }
+  
+  @keyframes popupAnimation {
+    0% {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
