@@ -6,7 +6,6 @@ import {auth, db} from "../firebaseConfig";
 import {collection, addDoc } from 'firebase/firestore';
 
 const UserRegister = ({ navigation }) => {
-  const [role, setRole] = useState('Instructor');
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -58,29 +57,28 @@ const handleSignUp = async () => {
    setErrors(newErrors)
 
 
-  if (isValid) {
+   if (isValid) {
     try {
       const authInstance = getAuth();
       const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
       const user = userCredential.user;
-
+  
       await updateProfile(user, {
-        displayName: '${firstName} ${lastName} (${role})',
+        displayName: `${firstName} ${lastName} (Student)`,
       });
-
-      const collectionName = role == 'Student' ? 'students' : 'instructors';
-      await addDoc(collection(db, collectionName), {
-          uid: user.uid,
-      firstName,
-      lastName,
-      email,
-      role,
-      createdAt: new Date()
+  
+      await addDoc(collection(db, 'students'), {
+        uid: user.uid,
+        firstName,
+        lastName,
+        email,
+        role: 'Student',
+        createdAt: new Date(),
       });
-
-      alert ('Registration Successful');
+  
+      alert('Registration Successful');
       navigation.navigate('UserLogin');
-    } catch (error){
+    } catch (error) {
       alert(error.message);
     }
   }
@@ -91,22 +89,8 @@ const handleSignUp = async () => {
       <Text style={styles.title}>SIGN UP</Text>
       <Text style={styles.subtitle}>Join ARchiquest as a Valued Member</Text>
 
-      {/* User Role Toggle */}
       <View style={styles.roleSwitch}>
-        <TouchableOpacity
-          style={[styles.roleButton, role === 'Student' && styles.activeRole]}
-          onPress={() => setRole('Student')}
-        >
-          <FontAwesome5 name="graduation-cap" size={16} color={role === 'Student' ? '#fff' : '#333'} />
-          <Text style={[styles.roleText, role === 'Student' && styles.activeRoleText]}> Student</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.roleButton, role === 'Instructor' && styles.activeRole]}
-          onPress={() => setRole('Instructor')}
-        >
-          <FontAwesome5 name="book" size={16} color={role === 'Instructor' ? '#fff' : '#333'} />
-          <Text style={[styles.roleText, role === 'Instructor' && styles.activeRoleText]}> Instructor</Text>
-        </TouchableOpacity>
+    
       </View>
 
       {/* Input Fields */}
