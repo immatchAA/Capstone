@@ -1,0 +1,78 @@
+.creatework-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: #eef5ff;
+  }
+  
+  .creatework-content {
+    flex: 1;
+    padding: 40px;
+  }
+  
+  .creatework-header h1 {
+    font-size: 2rem;
+    color: #176BB7;
+    margin-bottom: 5px;
+  }
+  
+  .creatework-header p {
+    color: #666;
+    margin-bottom: 30px;
+  }
+  
+  /* Tabs */
+  .creatework-tabs {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 10px;
+    position: relative;
+  }
+  
+  .creatework-tabs button {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    padding-bottom: 5px;
+    transition: color 0.3s;
+  }
+  
+  .creatework-tabs button.active {
+    color: #176BB7;
+  }
+  
+  .tab-underline {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    background-color: #176BB7;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+  }
+  
+  /* Sections */
+  .creatework-section {
+    margin-top: 60px;
+  }
+  
+  .creatework-card {
+    background: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Sticky Header */
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #eef5ff;
+    padding-bottom: 10px;
+    padding-top: 20px;
+  }
+  
