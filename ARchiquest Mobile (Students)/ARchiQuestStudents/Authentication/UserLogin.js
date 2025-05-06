@@ -1,79 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
-import { getAuth, signInWithEmailAndPassword, signInWithCredential, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth';
+import { supabase } from '../supabaseClient';
 
 const UserLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
-    iosClientId: 'YOUR_IOS_CLIENT_ID',
-    expoClientId: 'YOUR_EXPO_CLIENT_ID',
-  });
-
-  useEffect(() => {
-    WebBrowser.maybeCompleteAuthSession();
-    if (response?.type === 'success') {
-      const { authentication } = response;
-      alert('Google Login Successful!');
-      setModalVisible(false);
-    }
-  }, [response]);
 
   const handleLogin = async () => {
     if (email && password) {
-      try {
-        const auth = getAuth();
-        await signInWithEmailAndPassword(auth, email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+  
+      if (error) {
+        alert('Login failed: ' + error.message);
+      } else {
         alert('Login Successful');
         navigation.navigate('Dashboard');
-      } catch (error) {
-        alert(error.message);
       }
     } else {
       alert('Please fill in all fields');
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setModalVisible(true);
-    setTimeout(() => setModalVisible(false), 5000);
-
-    const result = await promptAsync();
-    if (result?.type === 'success') {
-      const { authentication } = result;
-      const credential = GoogleAuthProvider.credential(authentication.idToken, authentication.accessToken);
-
-      try {
-        const auth = getAuth();
-        await signInWithCredential(auth, credential);
-        alert('Google Login Successful!');
-        navigation.navigate('Dashboard');
-      } catch (error) {
-        alert('Google login failed: ' + error.message);
-      }
-    }
-  };
-
   const handleForgotPassword = async () => {
     if (email) {
-      const auth = getAuth();
-      try {
-        await sendPasswordResetEmail(auth, email);
-        alert('Password reset email sent!');
-      } catch (error) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+  
+      if (error) {
         alert('Error: ' + error.message);
+      } else {
+        alert('Password reset email sent!');
       }
     } else {
       alert('Please enter your email.');
     }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -115,25 +81,6 @@ const UserLogin = ({ navigation }) => {
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginButtonText}>Log In</Text>
       </TouchableOpacity>
-
-      <Text style={styles.orLogin}>Or log in with</Text>
-
-      <TouchableOpacity
-        style={styles.googleButton}
-        disabled={!request}
-        onPress={handleGoogleLogin}
-      >
-        <FontAwesome5 name="google" size={20} color="#176B87" />
-        <Text style={styles.googleButtonText}>Google</Text>
-      </TouchableOpacity>
-
-      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContent}>
-            <Text>Signing in with Google...</Text>
-          </View>
-        </View>
-      </Modal>
 
       <View style={styles.signUpContainer}>
         <Text>Don't have an account yet?</Text>
