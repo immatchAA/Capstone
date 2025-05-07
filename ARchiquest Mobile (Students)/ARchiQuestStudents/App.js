@@ -9,7 +9,7 @@ import InsightPanel from './StudentProgressMonitoring/InsightPanel';
 import StudentProgress from './StudentProgressMonitoring/StudentProgress';
 import DesignPlan from './UploadDesign/DesignPlan';
 import MaterialsTab from './UploadDesign/MaterialsTab';
-import MainLandingPage from './Dashboard/mainLanding';
+import MainLanding from './Dashboard/mainLanding';
 
 const Stack = createStackNavigator();
 
@@ -26,8 +26,7 @@ export default function App() {
         <Stack.Screen name='StudentProgress' component={StudentProgress} />
         <Stack.Screen name='DesignPlan' component={DesignPlan} />
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
-        <Stack.Screen name="MainLandingPage" component={MainLandingPage} />
-
+        <Stack.Screen name="MainLanding" component={MainLanding} />
       </Stack.Navigator>
     </NavigationContainer>
   );

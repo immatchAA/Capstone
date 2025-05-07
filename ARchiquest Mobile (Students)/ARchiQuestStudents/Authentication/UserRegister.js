@@ -141,14 +141,14 @@ const UserRegister = ({ navigation }) => {
         first_name: firstName,
         last_name: lastName,
         email: email,
-        role: 'Student',
+        role: 'student',
         created_at: new Date()
       });
 
       if (insertError) {
         alert('❌ Failed to save profile: ' + insertError.message);
       } else {
-        alert('✅ Registration successful! Please check your email to confirm.');
+        alert('✅ Registration successful!');
         navigation.navigate('UserLogin');
       }
     }
