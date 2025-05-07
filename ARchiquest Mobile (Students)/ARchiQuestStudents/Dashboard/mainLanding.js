@@ -453,7 +453,7 @@ sideNavOverlayTouchable: {
 },
 
 sideNav: {
-  backgroundColor: '#EEF5FF',
+  backgroundColor: '#ffff',
   width: '45%',
   height: '91.9%',
   paddingHorizontal: 20,

@@ -1,218 +1,180 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-
-const getAIInsights = () => {
-  return [
-    { label: 'Design Thinking', value: 0.82, icon: 'bar-chart' },
-    { label: 'Technical Skills', value: 0.75, icon: 'bolt' },
-    { label: 'Project Management', value: 0.6, icon: 'tasks' },
-  ];
-};
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
 const ModernArchPrinciples = () => {
-  const insights = getAIInsights();
-  const recommendations = [
-    {
-      title: 'Sustainable Materials Workshop',
-      desc: 'Improve your knowledge of eco-friendly building materials.',
-      onPress: () => alert('Navigating to Sustainable Materials Workshop'),
-    },
-    {
-      title: 'Urban Planning Challenge',
-      desc: 'Apply your skills in a real-world city planning scenario.',
-      onPress: () => alert('Navigating to Urban Planning Challenge'),
-    },
-    {
-      title: 'AR Visualization Techniques',
-      desc: 'Learn advanced methods for presenting architectural concepts.',
-      onPress: () => alert('Navigating to AR Visualization Techniques'),
-    },
-  ];
+  const [quizAnswer, setQuizAnswer] = useState(null);
+
+  const handleQuiz = (answer) => {
+    setQuizAnswer(answer);
+    const correct = answer === 'form';
+    Alert.alert(
+      correct ? "✅ Correct!" : "❌ Try Again",
+      correct
+        ? "Modern architecture prioritizes function in form."
+        : "That's not quite right. Hint: it's about purpose-driven design."
+    );
+  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContentContainer}
-      keyboardShouldPersistTaps="handled"
-      nestedScrollEnabled={true}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>AI Performance Insights</Text>
-          <View style={styles.updatedBadge}>
-            <Text style={styles.updatedText}>Updated Today</Text>
-          </View>
-        </View>
-        <Text style={styles.subtitle}>Personalized analysis of your learning</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Modern Architectural Principles</Text>
+      <Text style={styles.intro}>
+        Modern architecture emerged in the early 20th century as a rejection of excessive ornamentation and historical styles. These principles guide the functional, clean, and innovative designs we see in many buildings today.
+      </Text>
 
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryTitle}>🧠 AI Learning Assessment</Text>
-          <Text style={styles.summaryText}>
-            Based on your recent activities, you excel at structural design concepts but may benefit from
-            additional practice with sustainable materials.
-          </Text>
+      {principles.map((item, index) => (
+        <View key={index} style={styles.card}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardContent}>{item.description}</Text>
         </View>
+      ))}
 
-        {insights.map((item, index) => (
-          <View key={index} style={styles.insightRow}>
-            <View style={styles.insightIcon}>
-              <Icon name={item.icon} size={20} color="#176B87" />
-            </View>
-            <View style={styles.insightContent}>
-              <Text style={styles.insightLabel}>{item.label}</Text>
-              <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${item.value * 100}%` }]} />
-              </View>
-              <Text style={styles.insightPercent}>{Math.round(item.value * 100)}%</Text>
-            </View>
-          </View>
-        ))}
+      <Text style={styles.sectionTitle}>Notable Examples</Text>
+      {examples.map((item, index) => (
+        <View key={index} style={styles.card}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardContent}>{item.description}</Text>
+        </View>
+      ))}
+
+      <Text style={styles.sectionTitle}>Quick Quiz</Text>
+      <Text style={styles.cardContent}>Which principle says "Design should be based on purpose"?</Text>
+      <View style={styles.quizOptions}>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('ornament')}>
+          <Text style={styles.optionText}>Ornamentation Matters</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('form')}>
+          <Text style={styles.optionText}>Form Follows Function</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('volume')}>
+          <Text style={styles.optionText}>Volume Over Mass</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Personalized Recommendations</Text>
-        <Text style={styles.subtitle}>AI-suggested learning paths</Text>
-
-        {recommendations.map((rec, index) => (
-          <TouchableOpacity key={index} onPress={rec.onPress}>
-            <View style={styles.recommendationCard}>
-              <Text style={styles.recommendationIcon}>💡</Text>
-              <View style={styles.recommendationTextContainer}>
-                <Text style={styles.recommendationTitle}>{rec.title}</Text>
-                <Text style={styles.recommendationDesc}>{rec.desc}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+      <Text style={styles.sectionTitle}>Further Reading</Text>
+      <View style={styles.linkBox}>
+        <Text style={styles.linkText}>• Archisoup: Modern Architecture Guide</Text>
+        <Text style={styles.linkText}>• Neuroject: Principles of Modern Architecture</Text>
       </View>
     </ScrollView>
   );
 };
 
+const principles = [
+  {
+    title: '1. Form Follows Function',
+    description: 'A design should reflect its purpose. Instead of decorative excess, buildings emphasize usability and clarity of function.',
+  },
+  {
+    title: '2. Emphasis on Volume Over Mass',
+    description: 'Modern architecture uses lightweight materials and open spaces to create a sense of flow and spaciousness.',
+  },
+  {
+    title: '3. Minimal Ornamentation',
+    description: 'Designs avoid unnecessary decorations, focusing on clean lines and structural expression.',
+  },
+  {
+    title: '4. Honesty of Materials',
+    description: 'Materials like concrete, steel, and glass are celebrated in their raw, natural state, showcasing authenticity.',
+  },
+  {
+    title: '5. Open Floor Plans',
+    description: 'Walls are minimized to promote flexibility and interaction between spaces.',
+  },
+  {
+    title: '6. Integration with Nature',
+    description: 'Natural surroundings are embraced with large windows, green courtyards, and visual continuity with the landscape.',
+  },
+  {
+    title: '7. Use of New Technologies',
+    description: 'Innovative materials and construction techniques enable daring forms and efficient buildings.',
+  },
+  {
+    title: '8. Expression of Structure',
+    description: 'Exposed beams, columns, and load-bearing elements are intentionally left visible to reveal the building’s structure.',
+  },
+];
+
+const examples = [
+  {
+    title: 'Villa Savoye by Le Corbusier',
+    description: 'A manifesto of modern design with pilotis (columns), open floor plan, and ribbon windows.',
+  },
+  {
+    title: 'Seagram Building by Mies van der Rohe',
+    description: 'A glass-and-steel skyscraper that exemplifies minimalism and the International Style.',
+  },
+];
+
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#f0f4f7',
-    flex: 1,
+    padding: 20,
+    backgroundColor: '#F7F9FB',
   },
-  scrollContentContainer: {
-    paddingBottom: 20,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1E4F91',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  intro: {
+    fontSize: 15,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#EAF1FB',
     padding: 16,
-    marginBottom: 20,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
     shadowRadius: 4,
     elevation: 2,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  updatedBadge: {
-    backgroundColor: '#e0f0ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  updatedText: {
-    fontSize: 10,
-    color: '#176B87',
-    fontWeight: '500',
-  },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#176B87',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#7a7a7a',
-    marginBottom: 10,
-  },
-  summaryBox: {
-    backgroundColor: '#e8f0fc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-  },
-  summaryTitle: {
-    fontWeight: '600',
-    color: '#176B87',
+    color: '#176BB7',
     marginBottom: 6,
   },
-  summaryText: {
-    fontSize: 13,
-    color: '#333',
-    textAlign: 'justify',
-  },
-  insightRow: {
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  insightIcon: {
-    marginRight: 10,
-  },
-  insightContent: {
-    flex: 1,
-  },
-  insightLabel: {
+  cardContent: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-  },
-  progressBarFill: {
-    height: 8,
-    backgroundColor: '#176B87',
-    borderRadius: 4,
-  },
-  insightPercent: {
-    textAlign: 'right',
-    fontSize: 12,
-    color: '#176B87',
-    marginTop: 2,
-  },
-  recommendationCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f7faff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    alignItems: 'flex-start',
-  },
-  recommendationIcon: {
-    fontSize: 20,
-    marginRight: 10,
-    marginTop: 3,
-  },
-  recommendationTextContainer: {
-    flex: 1,
-  },
-  recommendationTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#176B87',
-    marginBottom: 4,
-  },
-  recommendationDesc: {
-    fontSize: 12,
     color: '#444',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E4F91',
+    marginVertical: 16,
+  },
+  linkBox: {
+    backgroundColor: '#D9EAFB',
+    padding: 14,
+    borderRadius: 10,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#176BB7',
+    marginBottom: 6,
+  },
+  quizOptions: {
+    marginTop: 10,
+    gap: 10,
+  },
+  optionBtn: {
+    backgroundColor: '#B4D4FF',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  optionText: {
+    fontSize: 14,
+    color: '#1E4F91',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

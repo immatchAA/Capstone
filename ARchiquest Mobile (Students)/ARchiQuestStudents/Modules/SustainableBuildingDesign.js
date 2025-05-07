@@ -1,219 +1,158 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
-const getAIInsights = () => {
-  return [
-    { label: 'Design Thinking', value: 0.82, icon: 'bar-chart' },
-    { label: 'Technical Skills', value: 0.75, icon: 'bolt' },
-    { label: 'Project Management', value: 0.6, icon: 'tasks' },
-  ];
-};
+const SustainableBuildingDesigns = () => {
+  const [quizAnswer, setQuizAnswer] = useState(null);
 
-const ModernArchPrinciples = () => {
-  const insights = getAIInsights();
-  const recommendations = [
-    {
-      title: 'Sustainable Materials Workshop',
-      desc: 'Improve your knowledge of eco-friendly building materials.',
-      onPress: () => alert('Navigating to Sustainable Materials Workshop'),
-    },
-    {
-      title: 'Urban Planning Challenge',
-      desc: 'Apply your skills in a real-world city planning scenario.',
-      onPress: () => alert('Navigating to Urban Planning Challenge'),
-    },
-    {
-      title: 'AR Visualization Techniques',
-      desc: 'Learn advanced methods for presenting architectural concepts.',
-      onPress: () => alert('Navigating to AR Visualization Techniques'),
-    },
-  ];
+  const handleQuiz = (answer) => {
+    setQuizAnswer(answer);
+    const correct = answer === 'passive';
+    Alert.alert(
+      correct ? "✅ Correct!" : "❌ Try Again",
+      correct
+        ? "Passive design minimizes energy use by working with natural elements."
+        : "Not quite. Hint: it uses sunlight, airflow, and shading."
+    );
+  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContentContainer}
-      keyboardShouldPersistTaps="handled"
-      nestedScrollEnabled={true}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>AI Performance Insights</Text>
-          <View style={styles.updatedBadge}>
-            <Text style={styles.updatedText}>Updated Today</Text>
-          </View>
-        </View>
-        <Text style={styles.subtitle}>Personalized analysis of your learning</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Sustainable Building Design Principles</Text>
+      <Text style={styles.intro}>
+        Sustainable architecture focuses on minimizing the environmental impact of buildings through conscious design, construction, and operation practices. These principles promote energy efficiency, resource conservation, and harmony with nature.
+      </Text>
 
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryTitle}>🧠 AI Learning Assessment</Text>
-          <Text style={styles.summaryText}>
-            Based on your recent activities, you excel at structural design concepts but may benefit from
-            additional practice with sustainable materials.
-          </Text>
+      {principles.map((item, index) => (
+        <View key={index} style={styles.card}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardContent}>{item.description}</Text>
         </View>
+      ))}
 
-        {insights.map((item, index) => (
-          <View key={index} style={styles.insightRow}>
-            <View style={styles.insightIcon}>
-              <Icon name={item.icon} size={20} color="#176B87" />
-            </View>
-            <View style={styles.insightContent}>
-              <Text style={styles.insightLabel}>{item.label}</Text>
-              <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${item.value * 100}%` }]} />
-              </View>
-              <Text style={styles.insightPercent}>{Math.round(item.value * 100)}%</Text>
-            </View>
-          </View>
-        ))}
+      <Text style={styles.sectionTitle}>Quick Quiz</Text>
+      <Text style={styles.cardContent}>Which design principle involves harnessing natural energy like sunlight and wind?</Text>
+      <View style={styles.quizOptions}>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('modular')}>
+          <Text style={styles.optionText}>Modular Construction</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('passive')}>
+          <Text style={styles.optionText}>Passive Design</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('insulation')}>
+          <Text style={styles.optionText}>Thermal Insulation</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Personalized Recommendations</Text>
-        <Text style={styles.subtitle}>AI-suggested learning paths</Text>
-
-        {recommendations.map((rec, index) => (
-          <TouchableOpacity key={index} onPress={rec.onPress}>
-            <View style={styles.recommendationCard}>
-              <Text style={styles.recommendationIcon}>💡</Text>
-              <View style={styles.recommendationTextContainer}>
-                <Text style={styles.recommendationTitle}>{rec.title}</Text>
-                <Text style={styles.recommendationDesc}>{rec.desc}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+      <Text style={styles.sectionTitle}>Further Reading</Text>
+      <View style={styles.linkBox}>
+        <Text style={styles.linkText}>• Pablo Luna Studio: What is Sustainable Design?</Text>
+        <Text style={styles.linkText}>• Breathe Architecture: Principles of Sustainable Architecture</Text>
       </View>
     </ScrollView>
   );
 };
 
+const principles = [
+  {
+    title: '1. Passive Design',
+    description: 'Maximizes natural light and ventilation to reduce energy consumption for heating, cooling, and lighting.',
+  },
+  {
+    title: '2. Energy Efficiency',
+    description: 'Uses efficient systems and appliances to reduce the building’s energy needs and carbon footprint.',
+  },
+  {
+    title: '3. Sustainable Materials',
+    description: 'Incorporates renewable, recycled, or low-impact materials that reduce environmental harm.',
+  },
+  {
+    title: '4. Water Conservation',
+    description: 'Integrates rainwater harvesting, low-flow fixtures, and efficient irrigation to conserve water.',
+  },
+  {
+    title: '5. Indoor Environmental Quality',
+    description: 'Focuses on air quality, natural lighting, and non-toxic finishes to improve occupant health.',
+  },
+  {
+    title: '6. Site Responsiveness',
+    description: 'Designs respect local climate, topography, and ecology to minimize disruption and maximize harmony.',
+  },
+  {
+    title: '7. Lifecycle Thinking',
+    description: 'Considers the long-term environmental impacts from construction to demolition.',
+  },
+];
+
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#f0f4f7',
-    flex: 1,
+    padding: 20,
+    backgroundColor: '#F5FCF8',
   },
-  scrollContentContainer: {
-    paddingBottom: 20,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2A7D46',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  intro: {
+    fontSize: 15,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#DFF3E4',
     padding: 16,
-    marginBottom: 20,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
     shadowRadius: 4,
     elevation: 2,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  updatedBadge: {
-    backgroundColor: '#e0f0ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  updatedText: {
-    fontSize: 10,
-    color: '#176B87',
-    fontWeight: '500',
-  },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#176B87',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#7a7a7a',
-    marginBottom: 10,
-  },
-  summaryBox: {
-    backgroundColor: '#e8f0fc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-  },
-  summaryTitle: {
-    fontWeight: '600',
-    color: '#176B87',
+    color: '#2A7D46',
     marginBottom: 6,
   },
-  summaryText: {
-    fontSize: 13,
-    color: '#333',
-    textAlign: 'justify',
-  },
-  insightRow: {
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  insightIcon: {
-    marginRight: 10,
-  },
-  insightContent: {
-    flex: 1,
-  },
-  insightLabel: {
+  cardContent: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-  },
-  progressBarFill: {
-    height: 8,
-    backgroundColor: '#176B87',
-    borderRadius: 4,
-  },
-  insightPercent: {
-    textAlign: 'right',
-    fontSize: 12,
-    color: '#176B87',
-    marginTop: 2,
-  },
-  recommendationCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f7faff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    alignItems: 'flex-start',
-  },
-  recommendationIcon: {
-    fontSize: 20,
-    marginRight: 10,
-    marginTop: 3,
-  },
-  recommendationTextContainer: {
-    flex: 1,
-  },
-  recommendationTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#176B87',
-    marginBottom: 4,
-  },
-  recommendationDesc: {
-    fontSize: 12,
     color: '#444',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2A7D46',
+    marginVertical: 16,
+  },
+  linkBox: {
+    backgroundColor: '#CDEED9',
+    padding: 14,
+    borderRadius: 10,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#2A7D46',
+    marginBottom: 6,
+  },
+  quizOptions: {
+    marginTop: 10,
+    gap: 10,
+  },
+  optionBtn: {
+    backgroundColor: '#BCE4CE',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  optionText: {
+    fontSize: 14,
+    color: '#2A7D46',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
-export default ModernArchPrinciples;
+export default SustainableBuildingDesigns;

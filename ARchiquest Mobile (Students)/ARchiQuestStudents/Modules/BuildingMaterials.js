@@ -1,219 +1,149 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
-const getAIInsights = () => {
-  return [
-    { label: 'Design Thinking', value: 0.82, icon: 'bar-chart' },
-    { label: 'Technical Skills', value: 0.75, icon: 'bolt' },
-    { label: 'Project Management', value: 0.6, icon: 'tasks' },
-  ];
-};
+const BuildingMaterials = () => {
+  const [quizAnswer, setQuizAnswer] = useState(null);
 
-const ModernArchPrinciples = () => {
-  const insights = getAIInsights();
-  const recommendations = [
-    {
-      title: 'Sustainable Materials Workshop',
-      desc: 'Improve your knowledge of eco-friendly building materials.',
-      onPress: () => alert('Navigating to Sustainable Materials Workshop'),
-    },
-    {
-      title: 'Urban Planning Challenge',
-      desc: 'Apply your skills in a real-world city planning scenario.',
-      onPress: () => alert('Navigating to Urban Planning Challenge'),
-    },
-    {
-      title: 'AR Visualization Techniques',
-      desc: 'Learn advanced methods for presenting architectural concepts.',
-      onPress: () => alert('Navigating to AR Visualization Techniques'),
-    },
-  ];
+  const handleQuiz = (answer) => {
+    setQuizAnswer(answer);
+    const correct = answer === 'concrete';
+    Alert.alert(
+      correct ? "✅ Correct!" : "❌ Try Again",
+      correct
+        ? "Concrete is a composite material that plays a central role in construction due to its strength and durability."
+        : "Not quite. Hint: it's made with cement, sand, and gravel and poured on site."
+    );
+  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContentContainer}
-      keyboardShouldPersistTaps="handled"
-      nestedScrollEnabled={true}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>AI Performance Insights</Text>
-          <View style={styles.updatedBadge}>
-            <Text style={styles.updatedText}>Updated Today</Text>
-          </View>
-        </View>
-        <Text style={styles.subtitle}>Personalized analysis of your learning</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Building Materials & Technologies</Text>
+      <Text style={styles.intro}>
+        This module introduces essential construction materials and technologies used in modern and traditional building practices. Each material has unique properties that affect its strength, cost, sustainability, and application.
+      </Text>
 
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryTitle}>🧠 AI Learning Assessment</Text>
-          <Text style={styles.summaryText}>
-            Based on your recent activities, you excel at structural design concepts but may benefit from
-            additional practice with sustainable materials.
-          </Text>
+      {materials.map((item, index) => (
+        <View key={index} style={styles.card}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardContent}>{item.description}</Text>
         </View>
+      ))}
 
-        {insights.map((item, index) => (
-          <View key={index} style={styles.insightRow}>
-            <View style={styles.insightIcon}>
-              <Icon name={item.icon} size={20} color="#176B87" />
-            </View>
-            <View style={styles.insightContent}>
-              <Text style={styles.insightLabel}>{item.label}</Text>
-              <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${item.value * 100}%` }]} />
-              </View>
-              <Text style={styles.insightPercent}>{Math.round(item.value * 100)}%</Text>
-            </View>
-          </View>
-        ))}
+      <Text style={styles.sectionTitle}>Quick Quiz</Text>
+      <Text style={styles.cardContent}>
+        Which material is formed by mixing cement, water, sand, and aggregates, and is poured into molds to harden into structural components?
+      </Text>
+      <View style={styles.quizOptions}>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('timber')}>
+          <Text style={styles.optionText}>Timber</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('concrete')}>
+          <Text style={styles.optionText}>Concrete</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('brick')}>
+          <Text style={styles.optionText}>Brick</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Personalized Recommendations</Text>
-        <Text style={styles.subtitle}>AI-suggested learning paths</Text>
-
-        {recommendations.map((rec, index) => (
-          <TouchableOpacity key={index} onPress={rec.onPress}>
-            <View style={styles.recommendationCard}>
-              <Text style={styles.recommendationIcon}>💡</Text>
-              <View style={styles.recommendationTextContainer}>
-                <Text style={styles.recommendationTitle}>{rec.title}</Text>
-                <Text style={styles.recommendationDesc}>{rec.desc}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+      <Text style={styles.sectionTitle}>Further Reading</Text>
+      <View style={styles.linkBox}>
+        <Text style={styles.linkText}>• ArchDaily: Alternative Building Materials for Sustainable Construction</Text>
+        <Text style={styles.linkText}>• Green Building Council: Green Building Basics</Text>
+        <Text style={styles.linkText}>• MaterialDistrict: Innovations in Building Materials</Text>
+        <Text style={styles.linkText}>• Rethinking The Future: Vernacular Construction Techniques</Text>
       </View>
     </ScrollView>
   );
 };
 
+const materials = [
+  { title: '1. Cement', description: 'A binder used in concrete and mortar. It reacts with water to harden and gain strength over time. Portland cement is the most common type in use.' },
+  { title: '2. Concrete', description: 'A composite material made from cement, water, sand, and gravel. Used for foundations, slabs, beams, and more due to its compressive strength and durability.' },
+  { title: '3. Bricks', description: 'Small rectangular blocks made from clay or concrete, used in wall construction. Burnt clay bricks are durable and common in both rural and urban structures.' },
+  { title: '4. Timber', description: 'Wood processed for construction use. It is renewable, easy to shape, and used for framing, furniture, flooring, and roofing.' },
+  { title: '5. Steel', description: 'An alloy of iron known for high tensile strength. Used for reinforcements, beams, columns, and structural frames in high-rise and large-span buildings.' },
+  { title: '6. Glass', description: 'A transparent material used in windows, facades, skylights, and partitions. Types include float glass, laminated, and tempered for safety.' },
+  { title: '7. Stones', description: 'Natural rock pieces such as granite, limestone, and marble. Used in foundations, flooring, walls, and as decorative cladding.' },
+  { title: '8. Aluminum', description: 'Lightweight, corrosion-resistant metal used in doors, windows, roofing sheets, and cladding. Often used in modern architectural designs.' },
+  { title: '9. Asphalt', description: 'A petroleum-based binder used in road surfacing, waterproofing, and roofing. It is flexible and adheres well to surfaces.' },
+  { title: '10. Clay Products', description: 'Include tiles, bricks, and pottery. Clay is molded and fired in kilns for strength and water resistance.' },
+  { title: '11. Plastics', description: 'Synthetic materials like PVC and HDPE are used in piping, insulation, and paneling. Lightweight, flexible, and resistant to decay.' },
+  { title: '12. Gypsum Board', description: 'Also known as drywall or plasterboard, it is used for interior wall partitions and ceilings. It is fire-resistant and easy to install.' },
+  { title: '13. Fly Ash Bricks', description: 'Eco-friendly bricks made using fly ash from coal plants. They are lightweight, durable, and reduce carbon emissions.' },
+  { title: '14. Bamboo', description: 'A fast-growing sustainable material used in walls, scaffolding, flooring, and roofing, especially in tropical regions.' },
+  { title: '15. Fiber Reinforced Polymer (FRP)', description: 'Advanced material combining plastic and fibers like glass or carbon. Used in bridges, facades, and retrofitting for high strength and low weight.' },
+];
+
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#f0f4f7',
-    flex: 1,
+    padding: 20,
+    backgroundColor: '#F5FCF8',
   },
-  scrollContentContainer: {
-    paddingBottom: 20,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2A7D46',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  intro: {
+    fontSize: 15,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#DFF3E4',
     padding: 16,
-    marginBottom: 20,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
     shadowRadius: 4,
     elevation: 2,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  updatedBadge: {
-    backgroundColor: '#e0f0ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  updatedText: {
-    fontSize: 10,
-    color: '#176B87',
-    fontWeight: '500',
-  },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#176B87',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#7a7a7a',
-    marginBottom: 10,
-  },
-  summaryBox: {
-    backgroundColor: '#e8f0fc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-  },
-  summaryTitle: {
-    fontWeight: '600',
-    color: '#176B87',
+    color: '#2A7D46',
     marginBottom: 6,
   },
-  summaryText: {
-    fontSize: 13,
-    color: '#333',
-    textAlign: 'justify',
-  },
-  insightRow: {
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  insightIcon: {
-    marginRight: 10,
-  },
-  insightContent: {
-    flex: 1,
-  },
-  insightLabel: {
+  cardContent: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-  },
-  progressBarFill: {
-    height: 8,
-    backgroundColor: '#176B87',
-    borderRadius: 4,
-  },
-  insightPercent: {
-    textAlign: 'right',
-    fontSize: 12,
-    color: '#176B87',
-    marginTop: 2,
-  },
-  recommendationCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f7faff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    alignItems: 'flex-start',
-  },
-  recommendationIcon: {
-    fontSize: 20,
-    marginRight: 10,
-    marginTop: 3,
-  },
-  recommendationTextContainer: {
-    flex: 1,
-  },
-  recommendationTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#176B87',
-    marginBottom: 4,
-  },
-  recommendationDesc: {
-    fontSize: 12,
     color: '#444',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2A7D46',
+    marginVertical: 16,
+  },
+  linkBox: {
+    backgroundColor: '#CDEED9',
+    padding: 14,
+    borderRadius: 10,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#2A7D46',
+    marginBottom: 6,
+  },
+  quizOptions: {
+    marginTop: 10,
+    gap: 10,
+  },
+  optionBtn: {
+    backgroundColor: '#BCE4CE',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  optionText: {
+    fontSize: 14,
+    color: '#2A7D46',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
-export default ModernArchPrinciples;
+export default BuildingMaterials;
