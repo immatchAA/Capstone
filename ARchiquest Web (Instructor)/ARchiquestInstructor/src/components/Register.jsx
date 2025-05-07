@@ -4,14 +4,17 @@ import backgroundImage from '../images/bgbg.png';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '../../supabaseClient';
 import bcrypt from 'bcryptjs';
+import { useNavigate } from 'react-router-dom';
 
 function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'teacher'
   });
 
   const handleChange = (e) => {
@@ -20,37 +23,41 @@ function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+  
 
-    if(formData.password !== formData.confirmPassword){
-      alert("Password's dont match ");
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+    });
+  
+    if (authError) {
+      alert("❌ Failed to register: " + authError.message);
       return;
     }
-    try {
-      const hashedPassword = await bcrypt.hash(formData.password, 10);
+  
+    const userId = authData.user.id; 
+  
 
-      const { data, error } = await supabase.from('users').insert([
-        {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email.trim().toLowerCase(),
-          password: hashedPassword,
-          role: 'teacher'
-        }
-      ]);
-
-      if(error) {
-        console.error("Insert error: ", error.message);
-        alert("Error: " + error.message);
-      } else {
-        alert("Registration successful!");
-        console.log("Inserted user: ", data);
-        window.location.href = "/login";
-      }
-    } catch (err){
-      console.error("Unexoected error: ", err);
-      alert("Something went wrong");
+    const { error: insertError } = await supabase.from("users").insert([
+      {
+        id: userId,
+        email: formData.email,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        role: formData.role,
+      },
+    ]);
+    
+  
+    if (insertError) {
+      alert("❌ Failed to save user info: " + insertError.message);
+      return;
     }
+  
+    alert("✅ Registered successfully!");
+    navigate("/login");
   };
+  
 
   return (
     <div className="register-page background-blur" style={{ backgroundImage: `url(${backgroundImage})` }}>

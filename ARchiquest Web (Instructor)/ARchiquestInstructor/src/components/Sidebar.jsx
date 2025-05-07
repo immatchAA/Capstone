@@ -28,8 +28,8 @@ function Sidebar() {
           <FaHome className="icon" /> Dashboard
         </Link>
 
-        <Link to="/create-challenge" className="nav-item">
-          <FaTasks className="icon" /> Create Challenge
+        <Link to="/classkey" className="nav-item">
+          <FaTasks className="icon" /> Class Keys
         </Link>
 
         <Link to="/student-progress" className="nav-item">
