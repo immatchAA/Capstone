@@ -1,0 +1,70 @@
+/* TeacherClassKeySetup.css */
+.class-key-setup-container {
+    padding: 2rem;
+    max-width: 500px;
+    margin: 2rem auto;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f9fafe;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .class-key-setup-container h2 {
+    text-align: center;
+    color: #2c3e50;
+  }
+  
+  .card {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid #ddd;
+  }
+  
+  .label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  
+  .key-display {
+    background-color: #eef1f7;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    font-family: monospace;
+  }
+  
+  .generate-btn,
+  .create-btn {
+    padding: 0.6rem 1.2rem;
+    margin: 0.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  
+  .generate-btn {
+    background-color: #2980b9;
+    color: white;
+  }
+  
+  .create-btn {
+    background-color: #27ae60;
+    color: white;
+  }
+  
+  .create-btn:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+  }
+  
+  .success-message {
+    margin-top: 1rem;
+    color: #2ecc71;
+    font-weight: bold;
+  }
+  

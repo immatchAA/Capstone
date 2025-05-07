@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import VirtualStore from './components/Virtualstore';
 import Createdesignplan from './components/Createdesignplan';
 import CreateWork from './components/Creatework';
+import ClassKey from './components/ClassKey';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
       <Route path="/Virtualstore" element={<VirtualStore />} /> {/* Virtual Store page */}
       <Route path="/Createdesignplan" element={<Createdesignplan />} /> {/* Create Design Plan page */}
       <Route path="/Creatework" element={<CreateWork />} /> {/* Create Work page */}
+      <Route path="/classkey" element={<ClassKey />} />
       {/* Add more routes as needed */}
       {/* You can add other routes here later */}
     </Routes>

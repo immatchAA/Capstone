@@ -15,41 +15,35 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-  
-    const email = formData.email.trim().toLowerCase();
-    const password = formData.password;
-  
-    try {
-      // 🔍 Fetch user by email and role
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('role', 'teacher')
-        .maybeSingle(); // returns object or null
-  
-      console.log("🧪 Supabase response:", data, error);
-  
-      if (error || !data) {
-        alert("Invalid credentials. Access denied.");
-        console.error("Login error:", error?.message);
-        return;
-      }
-  
-      const isValid = await bcrypt.compare(password, data.password);
-  
-      if (!isValid) {
-        alert("Incorrect password");
-        return;
-      }
-  
-      alert("Login successful!");
-      navigate('/dashboard');
-  
-    } catch (err) {
-      console.error("Unexpected error during login:", err);
-      alert("Something went wrong. Try again.");
+
+    const { email, password } = formData;
+
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      alert("❌ Login failed: " + authError.message);
+      return;
     }
+
+    const userId = authData.user.id;
+
+    const { data: userData, error: userFetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (userFetchError) {
+      alert("❌ Could not fetch user data: " + userFetchError.message);
+      return;
+    }
+    localStorage.setItem('loggedInUser', JSON.stringify(userData));
+
+    alert("✅ Login successful!");
+    navigate('/classkey'); 
   };
   
   
@@ -90,12 +84,6 @@ function Login() {
               Don't have an Account? <a href="/register">Sign Up</a>
             </p>
 
-            <div className="google-signin">
-              <button className="google-btn">
-                <img src="/path-to-your-google-icon.png" alt="Google Icon" />
-                Sign In With Google
-              </button>
-            </div>
           </div>
         </div>
       </div>
