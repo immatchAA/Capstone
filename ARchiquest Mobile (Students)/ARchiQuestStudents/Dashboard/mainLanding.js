@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Animated, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../supabaseClient';
 
-const MainLanding = () => {
-  const router = useRouter();
+const MainLanding = ({ navigation }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [isSideNavVisible, setIsSideNavVisible] = useState(false);
@@ -64,7 +62,6 @@ const MainLanding = () => {
         <View style={styles.modalContent}>
         <Text style={styles.modalText}>{modalMessage}</Text>
 
-        {/* Center the close button below the text */}
         <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
             <TouchableOpacity style={styles.modalCloseButton} onPress={closeHelpModal}>
             <Text style={styles.modalCloseText}>Close</Text>
@@ -98,6 +95,18 @@ const MainLanding = () => {
         <TouchableOpacity style={styles.sideNavItem}>
           <Text style={styles.sideNavItemText}>Settings</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.sideNavItem}
+          onPress={() => {
+            setIsSideNavVisible(false);
+            navigation.navigate('Modules');
+          }}
+        >
+  <Text style={styles.sideNavItemText}>Modules</Text>
+</TouchableOpacity>
+
+
 
         <TouchableOpacity
           style={styles.sideNavItem}

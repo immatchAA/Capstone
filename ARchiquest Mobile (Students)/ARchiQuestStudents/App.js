@@ -10,13 +10,24 @@ import StudentProgress from './StudentProgressMonitoring/StudentProgress';
 import DesignPlan from './UploadDesign/DesignPlan';
 import MaterialsTab from './UploadDesign/MaterialsTab';
 import MainLanding from './Dashboard/mainLanding';
+import Modules from './Modules/Modules';
+import ModernArchPrinciples from './Modules/ModernArchPrinciples'
+import SustainableBuildingDesign from './Modules/SustainableBuildingDesign'
+import BuildingMaterials from './Modules/BuildingMaterials'
+import BuildingInfoModeling from './Modules/BuildingInfoModeling'
+import SmartBuildingTechs from './Modules/SmartBuildingTechs'
+import EnergyEfficientBuilding from './Modules/EnergyEfficientBuilding'
+import GreenBuildingCert from './Modules/GreenBuildingCert'
+import RenewableEnergySystems from './Modules/RenewableEnergySystems'
+import FireSafety from './Modules/FireSafety'
+
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='WelcomeScreen'>
+      <Stack.Navigator initialRouteName='MainLanding'>
         <Stack.Screen name='WelcomeScreen' component={WelcomeScreen}/>
         <Stack.Screen name='UserLogin' component={UserLogin}/>
         <Stack.Screen name='UserRegister' component={UserRegister}/>
@@ -27,6 +38,18 @@ export default function App() {
         <Stack.Screen name='DesignPlan' component={DesignPlan} />
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
         <Stack.Screen name="MainLanding" component={MainLanding} />
+        <Stack.Screen name='Modules' component={Modules} />
+
+        {/*MODULES*/}
+        <Stack.Screen name='ModernArchPrinciples' component={ModernArchPrinciples} />
+        <Stack.Screen name='SustainableBuildingDesign' component={SustainableBuildingDesign} />
+        <Stack.Screen name='BuildingMaterials' component={BuildingMaterials} />
+        <Stack.Screen name='BuildingInfoModeling' component={BuildingInfoModeling} />
+        <Stack.Screen name='SmartBuildingTechs' component={SmartBuildingTechs} />
+        <Stack.Screen name='EnergyEfficientBuilding' component={EnergyEfficientBuilding} />
+        <Stack.Screen name='GreenBuildingCert' component={GreenBuildingCert} />
+        <Stack.Screen name='RenewableEnergySystems' component={RenewableEnergySystems} />
+        <Stack.Screen name='FireSafety' component={FireSafety} />
       </Stack.Navigator>
     </NavigationContainer>
   );
