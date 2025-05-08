@@ -25,30 +25,47 @@ const UserLogin = ({ navigation }) => {
   const handleLogin = async () => {
     let isValid = true;
     const newErrors = { email: '', password: '' };
-
+  
     if (!email) {
       newErrors.email = 'Email is required';
       isValid = false;
     }
-
+  
     if (!password) {
       newErrors.password = 'Password is required';
       isValid = false;
     }
-
+  
     setErrors(newErrors);
-
+  
     if (isValid) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-
+  
       if (error) {
         alert('Login failed: ' + error.message);
       } else {
-        alert('Welcome to ARchiQuest');
-        navigation.navigate('MainLanding');
+        const { user } = data;
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+  
+        if (profileError) {
+          alert('Error fetching user profile: ' + profileError.message);
+          return;
+        }
+  
+        if (userProfile.role !== 'student' && userProfile.role !== 'Student') {
+          alert('Access denied. Only students can log in.');
+          await supabase.auth.signOut();
+        } else {
+          alert('Welcome to ARchiQuest');
+          navigation.navigate('MainLanding');
+        }
       }
     }
   };
