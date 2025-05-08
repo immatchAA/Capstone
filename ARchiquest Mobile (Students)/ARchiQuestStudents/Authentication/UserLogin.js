@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { supabase } from '../supabaseClient';
@@ -8,28 +8,55 @@ const UserLogin = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+  });
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setEmail('');
+      setPassword('');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const handleLogin = async () => {
-    if (email && password) {
+    let isValid = true;
+    const newErrors = { email: '', password: '' };
+
+    if (!email) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    }
+
+    if (!password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+
+    if (isValid) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-  
+
       if (error) {
         alert('Login failed: ' + error.message);
       } else {
         alert('Welcome to ARchiQuest');
         navigation.navigate('MainLanding');
       }
-    } else {
-      alert('Please fill in all fields');
     }
   };
 
   const handleForgotPassword = async () => {
     if (email) {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
-  
+
       if (error) {
         alert('Error: ' + error.message);
       } else {
@@ -39,12 +66,11 @@ const UserLogin = ({ navigation }) => {
       alert('Please enter your email.');
     }
   };
-  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ARchiQuest</Text>
-      <Text style={styles.subtitle}>Student Login</Text>
+      <Text style={styles.subtitle}>Login</Text>
 
       <Text style={styles.label}>Email</Text>
       <TextInput
@@ -54,6 +80,7 @@ const UserLogin = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
       />
+      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
       <Text style={styles.label}>Password</Text>
       <View style={styles.passwordContainer}>
@@ -73,6 +100,7 @@ const UserLogin = ({ navigation }) => {
           />
         </TouchableOpacity>
       </View>
+      {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
 
       <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
         <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
@@ -97,7 +125,7 @@ const styles = StyleSheet.create({
     flex: 1, 
     alignItems: 'center', 
     justifyContent: 'center', 
-    backgroundColor: '#f5f5f5', 
+    backgroundColor: '#fff', 
     padding: 20 
   },
   title: { 
@@ -172,40 +200,13 @@ const styles = StyleSheet.create({
   signUpLink: { 
     color: '#007bff' 
   },
-  orLogin: { 
-    marginTop: 10, 
-    fontSize: 14, 
-    color: '#555' 
-  },
-  googleButton: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    backgroundColor: '#fff', 
-    borderWidth: 1, 
-    borderColor: '#176B87', 
-    borderRadius: 8, 
-    paddingVertical: 10, 
-    paddingHorizontal: 20, 
-    width: '90%', 
-    marginTop: 10 
-  },
-  googleButtonText: { 
-    marginLeft: 10, 
-    color: '#176B87', 
-    fontSize: 16, 
-    fontWeight: '500' 
-  },
-  modalBackground: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    backgroundColor: 'rgba(0, 0, 0, 0.5)' 
-  },
-  modalContent: { 
-    backgroundColor: 'white', 
-    padding: 20, 
-    borderRadius: 10 
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 5,
+    alignSelf: 'flex-start',
+    marginLeft: 20,
   },
 });
 

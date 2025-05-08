@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
-const Modules = ({ navigation }) => {
+const ReadingMaterials = ({ navigation }) => {
   return (
     <ScrollView
       style={styles.container}
@@ -15,7 +15,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Modern Architectural Principles</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('ModernArchPrinciples')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -23,7 +23,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Urban Planning Fundamentals</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('UrbanPlanningFundamentals')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -34,7 +34,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sustainable Building Design</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('SustainableBuildingDesign')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -42,7 +42,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Building Materials and Technologies</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('BuildingMaterials')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -53,7 +53,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Building Information Modeling (BIM)</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('BuildingInfoModeling')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -61,7 +61,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Smart Building Technologies</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('SmartBuildingTechs')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -72,7 +72,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Energy-Efficient Building Design</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('EnergyEfficientBuilding')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -80,7 +80,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Green Building Certifications</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('GreenBuildingCert')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -91,7 +91,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Renewable Energy Systems in Buildings</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('RenewableEnergySystems')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -99,7 +99,7 @@ const Modules = ({ navigation }) => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Fire Safety and Building Codes</Text>
             <TouchableOpacity style={styles.cardButton} onPress={() => navigation.navigate('FireSafety')}>
-              <Text style={styles.cardButtonText}>View Module</Text>
+              <Text style={styles.cardButtonText}>Read</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -112,7 +112,7 @@ const Modules = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f4f7',
+    backgroundColor: '#EEF5FF',
     padding: 20,
     paddingTop: 30,
   },
@@ -159,4 +159,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Modules;
+export default ReadingMaterials;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Alert, ScrollView } from 'react-native';
 import { supabase } from '../supabaseClient'; // Import Supabase client
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for camera icon
 
 const Profile = () => {
   const [user, setUser] = useState(null); // State to store user data
@@ -121,38 +122,40 @@ const Profile = () => {
           />
         ) : (
           <Image
-            source={require('../assets/default-profile.jpg')}
+            source={require('../assets/default-profile.jpg')} // Correct path to your local image
             style={styles.profileImage}
           />
         )}
 
-        {/* Change Profile Picture Button */}
+        {/* Change Profile Picture Button with Camera Icon */}
         <TouchableOpacity onPress={pickImage} style={styles.changeImageButton}>
-          <Text style={styles.changeImageText}>Change Profile Picture</Text>
+          <Ionicons name="camera" size={24} color="#176B87" /> {/* Smaller camera icon */}
         </TouchableOpacity>
 
         {/* User Info */}
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          value={newFullName}
-          onChangeText={setNewFullName}
-        />
+        <View style={styles.userInfo}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            value={newFullName}
+            onChangeText={setNewFullName}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={newEmail}
-          onChangeText={setNewEmail}
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={newEmail}
+            onChangeText={setNewEmail}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Bio"
-          value={bio}
-          onChangeText={setBio}
-          multiline
-        />
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Bio"
+            value={bio}
+            onChangeText={setBio}
+            multiline
+          />
+        </View>
 
         {/* Save Profile Button */}
         <TouchableOpacity
@@ -188,33 +191,46 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     marginBottom: 15,
   },
   changeImageButton: {
-    backgroundColor: '#B4D4FF',
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#B4D4FF',
     marginTop: 10,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   changeImageText: {
     color: '#176B87',
     fontSize: 16,
     fontWeight: 'bold',
   },
+  userInfo: {
+    width: '100%',
+    marginBottom: 20,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 10,
-    padding: 10,
+    padding: 12,
     width: '100%',
     fontSize: 16,
     color: '#333',
     backgroundColor: '#f9f9f9',
-    marginBottom: 12,
+    marginBottom: 15,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
   button: {
     backgroundColor: '#176B87',
@@ -222,6 +238,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 15,
+    width: '80%',
   },
   buttonText: {
     color: '#fff',

@@ -10,17 +10,17 @@ import StudentProgress from './StudentProgressMonitoring/StudentProgress';
 import DesignPlan from './UploadDesign/DesignPlan';
 import MaterialsTab from './UploadDesign/MaterialsTab';
 import MainLanding from './Dashboard/mainLanding';
-import Modules from './Modules/Modules';
-import ModernArchPrinciples from './Modules/ModernArchPrinciples'
-import SustainableBuildingDesign from './Modules/SustainableBuildingDesign'
-import BuildingMaterials from './Modules/BuildingMaterials'
-import BuildingInfoModeling from './Modules/BuildingInfoModeling'
-import SmartBuildingTechs from './Modules/SmartBuildingTechs'
-import EnergyEfficientBuilding from './Modules/EnergyEfficientBuilding'
-import GreenBuildingCert from './Modules/GreenBuildingCert'
-import RenewableEnergySystems from './Modules/RenewableEnergySystems'
-import FireSafety from './Modules/FireSafety'
-import UrbanPlanningFundamentals from './Modules/UrbanPlanningFundamentals'
+import ReadingMaterials from './ReadingMaterials/ReadingMaterials';
+import ModernArchPrinciples from './ReadingMaterials/ModernArchPrinciples'
+import SustainableBuildingDesign from './ReadingMaterials/SustainableBuildingDesign'
+import BuildingMaterials from './ReadingMaterials/BuildingMaterials'
+import BuildingInfoModeling from './ReadingMaterials/BuildingInfoModeling'
+import SmartBuildingTechs from './ReadingMaterials/SmartBuildingTechs'
+import EnergyEfficientBuilding from './ReadingMaterials/EnergyEfficientBuilding'
+import GreenBuildingCert from './ReadingMaterials/GreenBuildingCert'
+import RenewableEnergySystems from './ReadingMaterials/RenewableEnergySystems'
+import FireSafety from './ReadingMaterials/FireSafety'
+import UrbanPlanningFundamentals from './ReadingMaterials/UrbanPlanningFundamentals'
 import Profile from './Profile/Profile';
 
 const Stack = createStackNavigator();
@@ -28,7 +28,7 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='MainLanding'>
+      <Stack.Navigator initialRouteName='WelcomeScreen'>
         <Stack.Screen name='WelcomeScreen' component={WelcomeScreen}/>
         <Stack.Screen name='UserLogin' component={UserLogin}/>
         <Stack.Screen name='UserRegister' component={UserRegister}/>
@@ -39,10 +39,10 @@ export default function App() {
         <Stack.Screen name='DesignPlan' component={DesignPlan} />
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
         <Stack.Screen name="MainLanding" component={MainLanding} />
-        <Stack.Screen name='Modules' component={Modules} />
+        <Stack.Screen name='ReadingMaterials' component={ReadingMaterials} />
         <Stack.Screen name='Profile' component={Profile} />
 
-        {/*MODULES*/}
+        {/*READING MATERIALS*/}
         <Stack.Screen name='ModernArchPrinciples' component={ModernArchPrinciples} />
         <Stack.Screen name='SustainableBuildingDesign' component={SustainableBuildingDesign} />
         <Stack.Screen name='BuildingMaterials' component={BuildingMaterials} />

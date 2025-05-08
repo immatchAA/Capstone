@@ -101,10 +101,10 @@ const MainLanding = ({ navigation }) => {
               style={styles.sideNavItem}
               onPress={() => {
                 setIsSideNavVisible(false);
-                navigation.navigate('Modules');
+                navigation.navigate('ReadingMaterials');
               }}
             >
-      <Text style={styles.sideNavItemText}>Modules</Text>
+      <Text style={styles.sideNavItemText}>Reading Materials</Text>
     </TouchableOpacity>
 
         <TouchableOpacity
