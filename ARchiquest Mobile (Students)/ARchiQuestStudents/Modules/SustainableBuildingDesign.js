@@ -1,52 +1,58 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React from 'react';
+import { ScrollView, Text, StyleSheet, View } from 'react-native';
 
-const SustainableBuildingDesigns = () => {
-  const [quizAnswer, setQuizAnswer] = useState(null);
-
-  const handleQuiz = (answer) => {
-    setQuizAnswer(answer);
-    const correct = answer === 'passive';
-    Alert.alert(
-      correct ? "✅ Correct!" : "❌ Try Again",
-      correct
-        ? "Passive design minimizes energy use by working with natural elements."
-        : "Not quite. Hint: it uses sunlight, airflow, and shading."
-    );
-  };
-
+const SustainableBuildingDesign = () => {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Sustainable Building Design Principles</Text>
-      <Text style={styles.intro}>
-        Sustainable architecture focuses on minimizing the environmental impact of buildings through conscious design, construction, and operation practices. These principles promote energy efficiency, resource conservation, and harmony with nature.
-      </Text>
+    <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>Sustainable Building Design</Text>
 
-      {principles.map((item, index) => (
-        <View key={index} style={styles.card}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
-          <Text style={styles.cardContent}>{item.description}</Text>
-        </View>
-      ))}
+      <Text style={styles.sectionTitle}>Overview</Text>
+      <View style={styles.card}>
+        <Text style={styles.content}>
+          Sustainable building design integrates environmental, social, and economic considerations into the planning, design, and construction of buildings. The goal is to create structures that minimize negative impacts on the environment, enhance occupant well-being, and contribute positively to the community. This approach encompasses various strategies, including energy efficiency, resource conservation, and the use of sustainable materials.
+        </Text>
+      </View>
 
-      <Text style={styles.sectionTitle}>Quick Quiz</Text>
-      <Text style={styles.cardContent}>Which design principle involves harnessing natural energy like sunlight and wind?</Text>
-      <View style={styles.quizOptions}>
-        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('modular')}>
-          <Text style={styles.optionText}>Modular Construction</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('passive')}>
-          <Text style={styles.optionText}>Passive Design</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.optionBtn} onPress={() => handleQuiz('insulation')}>
-          <Text style={styles.optionText}>Thermal Insulation</Text>
-        </TouchableOpacity>
+      <Text style={styles.sectionTitle}>Key Principles</Text>
+      <View style={styles.card}>
+        <Text style={styles.content}>
+          Sustainable architecture is grounded in several core principles:
+        </Text>
+        {principles.map((item, index) => (
+          <Text key={index} style={styles.listItem}>
+            <Text style={styles.boldText}>{item.title}</Text>: {item.description}
+          </Text>
+        ))}
+      </View>
+
+      <Text style={styles.sectionTitle}>Design Strategies</Text>
+      <View style={styles.card}>
+        <Text style={styles.content}>
+          To achieve sustainable building design, various strategies are employed:
+        </Text>
+        {designStrategies.map((item, index) => (
+          <Text key={index} style={styles.listItem}>
+            <Text style={styles.boldText}>{item.title}</Text>: {item.description}
+          </Text>
+        ))}
+      </View>
+
+      <Text style={styles.sectionTitle}>Case Studies</Text>
+      <View style={styles.card}>
+        <Text style={styles.content}>
+          Real-world examples demonstrate the application of sustainable building design principles:
+        </Text>
+        {caseStudies.map((item, index) => (
+          <Text key={index} style={styles.listItem}>
+            <Text style={styles.boldText}>{item.name}</Text>: {item.description}
+          </Text>
+        ))}
       </View>
 
       <Text style={styles.sectionTitle}>Further Reading</Text>
       <View style={styles.linkBox}>
-        <Text style={styles.linkText}>• Pablo Luna Studio: What is Sustainable Design?</Text>
-        <Text style={styles.linkText}>• Breathe Architecture: Principles of Sustainable Architecture</Text>
+        <Text style={styles.linkText}>• What is Sustainable Design in Architecture? – Pablo Luna Studio</Text>
+        <Text style={styles.linkText}>• Principles of Sustainable Architecture – Breathe Architecture</Text>
       </View>
     </ScrollView>
   );
@@ -54,105 +60,137 @@ const SustainableBuildingDesigns = () => {
 
 const principles = [
   {
-    title: '1. Passive Design',
-    description: 'Maximizes natural light and ventilation to reduce energy consumption for heating, cooling, and lighting.',
+    title: 'Passive Design',
+    description: 'Utilizing natural resources like sunlight, wind, and shade to heat, cool, and illuminate spaces, reducing reliance on mechanical systems.'
   },
   {
-    title: '2. Energy Efficiency',
-    description: 'Uses efficient systems and appliances to reduce the building’s energy needs and carbon footprint.',
+    title: 'Energy Efficiency',
+    description: 'Implementing design strategies and technologies that minimize energy consumption, such as high-quality insulation, efficient HVAC systems, and energy-efficient appliances.'
   },
   {
-    title: '3. Sustainable Materials',
-    description: 'Incorporates renewable, recycled, or low-impact materials that reduce environmental harm.',
+    title: 'Life Cycle Carbon Footprint',
+    description: 'Assessing and reducing the total carbon emissions associated with a building\'s life cycle, from material extraction to construction, operation, and eventual demolition.'
   },
   {
-    title: '4. Water Conservation',
-    description: 'Integrates rainwater harvesting, low-flow fixtures, and efficient irrigation to conserve water.',
+    title: 'Material Impact and Waste',
+    description: 'Selecting materials with low environmental impact, promoting the use of recycled and locally sourced materials, and designing for material reuse and recycling.'
   },
   {
-    title: '5. Indoor Environmental Quality',
-    description: 'Focuses on air quality, natural lighting, and non-toxic finishes to improve occupant health.',
+    title: 'Local Environment',
+    description: 'Considering the local climate, topography, and ecosystem in the design process to ensure the building harmonizes with its surroundings.'
   },
   {
-    title: '6. Site Responsiveness',
-    description: 'Designs respect local climate, topography, and ecology to minimize disruption and maximize harmony.',
+    title: 'Health and Wellbeing',
+    description: 'Creating indoor environments that promote occupant health through good air quality, natural lighting, and access to nature.'
   },
   {
-    title: '7. Lifecycle Thinking',
-    description: 'Considers the long-term environmental impacts from construction to demolition.',
+    title: 'Affordability',
+    description: 'Designing buildings that are cost-effective to build and maintain, ensuring long-term sustainability without compromising quality.'
+  }
+];
+
+const designStrategies = [
+  {
+    title: 'Site Assessment',
+    description: 'Evaluating the site for factors like climate, orientation, and local context to inform design decisions.'
   },
+  {
+    title: 'Building Orientation',
+    description: 'Positioning the building to maximize natural light and passive solar heating while minimizing heat gain and loss.'
+  },
+  {
+    title: 'Thermal Performance',
+    description: 'Designing the building envelope to provide adequate insulation and minimize thermal bridging, enhancing energy efficiency.'
+  },
+  {
+    title: 'Water Management',
+    description: 'Implementing systems for rainwater harvesting, greywater recycling, and efficient water use to reduce consumption and manage stormwater.'
+  },
+  {
+    title: 'Indoor Environmental Quality',
+    description: 'Ensuring good indoor air quality through proper ventilation, use of low-emission materials, and access to natural light and views.'
+  },
+  {
+    title: 'Renewable Energy Integration',
+    description: 'Incorporating renewable energy sources like solar panels and wind turbines to reduce dependence on fossil fuels.'
+  }
+];
+
+const caseStudies = [
+  {
+    name: 'Manta Yoga Shala',
+    description: 'A bamboo structure in Bali that utilizes passive design strategies and locally sourced materials to create an eco-friendly retreat.'
+  },
+  {
+    name: 'Shell Restaurant',
+    description: 'Also in Bali, this bamboo building integrates sustainable practices with ocean-inspired design, maximizing energy efficiency and minimizing environmental impact.'
+  },
+  {
+    name: 'Fish Tail Tea Room',
+    description: 'Located on the cliffs of Nusa Penida, this structure blends with its natural surroundings, using locally sourced materials and sustainable construction methods to minimize environmental impact.'
+  }
 ];
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
+    flexGrow: 1,
+    backgroundColor: '#EEF5FF',
     padding: 20,
-    backgroundColor: '#F5FCF8',
+    paddingTop: 30,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#2A7D46',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  intro: {
-    fontSize: 15,
-    color: '#333',
+    color: '#176B87',
     textAlign: 'center',
     marginBottom: 20,
-  },
-  card: {
-    backgroundColor: '#DFF3E4',
-    padding: 16,
+    paddingVertical: 12,
+    backgroundColor: '#EEF5FF',
     borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#2A7D46',
-    marginBottom: 6,
-  },
-  cardContent: {
-    fontSize: 14,
-    color: '#444',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '600',
-    color: '#2A7D46',
+    color: '#176B87',
     marginVertical: 16,
+    letterSpacing: 0.5,
+  },
+  card: {
+    backgroundColor: '#EEF5FF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  content: {
+    fontSize: 16,
+    color: '#176B87',
+    lineHeight: 24,
+    marginBottom: 12,
+    textAlign: 'justify',
+  },
+  listItem: {
+    fontSize: 16,
+    color: '#176B87',
+    marginBottom: 6,
+    textAlign: 'justify',
+  },
+  boldText: {
+    fontWeight: 'bold',
   },
   linkBox: {
-    backgroundColor: '#CDEED9',
-    padding: 14,
+    backgroundColor: '#EEF5FF',
+    padding: 12,
     borderRadius: 10,
   },
   linkText: {
-    fontSize: 14,
-    color: '#2A7D46',
+    fontSize: 16,
+    color: '#176B87',
     marginBottom: 6,
-  },
-  quizOptions: {
-    marginTop: 10,
-    gap: 10,
-  },
-  optionBtn: {
-    backgroundColor: '#BCE4CE',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  optionText: {
-    fontSize: 14,
-    color: '#2A7D46',
-    fontWeight: '600',
-    textAlign: 'center',
   },
 });
 
-export default SustainableBuildingDesigns;
+export default SustainableBuildingDesign;

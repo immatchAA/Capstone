@@ -71,42 +71,41 @@ const MainLanding = ({ navigation }) => {
     </View>
     </Modal>
 
-    <Modal
-  transparent={true}
-  visible={isSideNavVisible}
-  animationType="none"
-  onRequestClose={() => setIsSideNavVisible(false)}
+    <Modal transparent={true} visible={isSideNavVisible} animationType="none" onRequestClose={() => setIsSideNavVisible(false)}
 >
-  <TouchableOpacity
-    activeOpacity={1}
-    onPress={() => setIsSideNavVisible(false)}
-    style={styles.fullScreenTouchable}
-  >
-    <View style={styles.sideNavWrapper}>
-      <Animated.View
-        style={[styles.sideNav, { transform: [{ translateX: slideAnim }] }]}
-      >
-        <Text style={styles.sideNavTitle}>Menu</Text>
+  <TouchableOpacity activeOpacity={1} 
+      onPress={() => setIsSideNavVisible(false)} 
+      style={styles.fullScreenTouchable}>
+        <View style={styles.sideNavWrapper}>
+          <Animated.View
+            style={[styles.sideNav, { transform: [{ translateX: slideAnim }] }]}
+          >
+            <Text style={styles.sideNavTitle}>Menu</Text>
 
-        <TouchableOpacity style={styles.sideNavItem}>
-          <Text style={styles.sideNavItemText}>View Profile</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.sideNavItem} onPress={() => {
+                setIsSideNavVisible(false);
+                navigation.navigate('Profile');
+              }}>
+              <Text style={styles.sideNavItemText}>View Profile</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity style={styles.sideNavItem}>
-          <Text style={styles.sideNavItemText}>Settings</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.sideNavItem}
+              onPress={() => {
+                setIsSideNavVisible(false);
+                navigation.navigate('StudentProgress');
+              }}>
+              <Text style={styles.sideNavItemText}>Progress</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.sideNavItem}
-          onPress={() => {
-            setIsSideNavVisible(false);
-            navigation.navigate('Modules');
-          }}
-        >
-  <Text style={styles.sideNavItemText}>Modules</Text>
-</TouchableOpacity>
-
-
+            <TouchableOpacity
+              style={styles.sideNavItem}
+              onPress={() => {
+                setIsSideNavVisible(false);
+                navigation.navigate('Modules');
+              }}
+            >
+      <Text style={styles.sideNavItemText}>Modules</Text>
+    </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.sideNavItem}
@@ -156,50 +155,50 @@ const MainLanding = ({ navigation }) => {
 
       <View style={styles.buttonRow}>
       <TouchableOpacity
-  style={styles.modalCloseButton}
-  onPress={async () => {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        alert("Unable to fetch user. Please log in.");
-        return;
-      }
+      style={styles.modalCloseButton}
+      onPress={async () => {
+        try {
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError || !user) {
+            alert("Unable to fetch user. Please log in.");
+            return;
+          }
 
-      const studentId = user.id;
+          const studentId = user.id;
 
-      const { data: classData, error: classError } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('class_key', classKey)
-        .single();
+          const { data: classData, error: classError } = await supabase
+            .from('classes')
+            .select('id')
+            .eq('class_key', classKey)
+            .single();
 
-      if (classError || !classData) {
-        alert("Class key not found.");
-        return;
-      }
+          if (classError || !classData) {
+            alert("Class key not found.");
+            return;
+          }
 
-      const classId = classData.id;
+          const classId = classData.id;
 
-      const { error: insertError } = await supabase.from('class_students').insert([
-        {
-          class_id: classId,
-          student_id: studentId,
-          joined_at: new Date().toISOString(),
+          const { error: insertError } = await supabase.from('class_students').insert([
+            {
+              class_id: classId,
+              student_id: studentId,
+              joined_at: new Date().toISOString(),
+            }
+          ]);
+
+          if (insertError) {
+            alert("Failed to join class: " + insertError.message);
+            return;
+          }
+
+          alert("✅ Successfully joined the class!");
+          setIsJoinModalVisible(false);
+          setClassKey('');
+        } catch (err) {
+          alert("An error occurred: " + err.message);
         }
-      ]);
-
-      if (insertError) {
-        alert("Failed to join class: " + insertError.message);
-        return;
-      }
-
-      alert("✅ Successfully joined the class!");
-      setIsJoinModalVisible(false);
-      setClassKey('');
-    } catch (err) {
-      alert("An error occurred: " + err.message);
-    }
-  }}
+      }}
 >
   <Text style={styles.modalCloseText}>Join Class</Text>
 </TouchableOpacity>
@@ -208,7 +207,7 @@ const MainLanding = ({ navigation }) => {
           style={[styles.modalCloseButton, { backgroundColor: '#EEF5FF' }]}
           onPress={() => setIsJoinModalVisible(false)}
         >
-          <Text style={[styles.modalCloseText, { color: '#333' }]}>Close</Text>
+          <Text style={[styles.modalCloseText, { color: '#176B87' }]}>Close</Text>
         </TouchableOpacity>
       </View>
     </View>

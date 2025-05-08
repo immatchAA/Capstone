@@ -1,219 +1,201 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { ScrollView, Text, StyleSheet, View } from 'react-native';
 
-const getAIInsights = () => {
-  return [
-    { label: 'Design Thinking', value: 0.82, icon: 'bar-chart' },
-    { label: 'Technical Skills', value: 0.75, icon: 'bolt' },
-    { label: 'Project Management', value: 0.6, icon: 'tasks' },
-  ];
-};
-
-const ModernArchPrinciples = () => {
-  const insights = getAIInsights();
-  const recommendations = [
-    {
-      title: 'Sustainable Materials Workshop',
-      desc: 'Improve your knowledge of eco-friendly building materials.',
-      onPress: () => alert('Navigating to Sustainable Materials Workshop'),
-    },
-    {
-      title: 'Urban Planning Challenge',
-      desc: 'Apply your skills in a real-world city planning scenario.',
-      onPress: () => alert('Navigating to Urban Planning Challenge'),
-    },
-    {
-      title: 'AR Visualization Techniques',
-      desc: 'Learn advanced methods for presenting architectural concepts.',
-      onPress: () => alert('Navigating to AR Visualization Techniques'),
-    },
-  ];
-
+const GreenBuildingCert = () => {
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContentContainer}
-      keyboardShouldPersistTaps="handled"
-      nestedScrollEnabled={true}
-      showsVerticalScrollIndicator={false}
-    >
+    <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>Green Building Certifications</Text>
+
+      <Text style={styles.sectionTitle}>Overview</Text>
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>AI Performance Insights</Text>
-          <View style={styles.updatedBadge}>
-            <Text style={styles.updatedText}>Updated Today</Text>
-          </View>
-        </View>
-        <Text style={styles.subtitle}>Personalized analysis of your learning</Text>
+        <Text style={styles.content}>
+          Green building certifications are used to assess a project's environmental and sustainability performance. These certifications provide a framework for designing, constructing, and operating buildings that are resource-efficient and environmentally responsible. They are awarded based on a set of criteria that evaluate various aspects of a building's impact on the environment and occupant health.
+        </Text>
+      </View>
 
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryTitle}>🧠 AI Learning Assessment</Text>
-          <Text style={styles.summaryText}>
-            Based on your recent activities, you excel at structural design concepts but may benefit from
-            additional practice with sustainable materials.
+      <Text style={styles.sectionTitle}>Key Green Building Certification Systems</Text>
+      {greenBuildingCertifications.map((item, index) => (
+        <View key={index} style={styles.card}>
+          <Text style={styles.cardTitle}>
+            <Text style={styles.boldText}>{item.title}</Text>
           </Text>
+          <Text style={styles.content}>{item.description}</Text>
         </View>
+      ))}
 
-        {insights.map((item, index) => (
-          <View key={index} style={styles.insightRow}>
-            <View style={styles.insightIcon}>
-              <Icon name={item.icon} size={20} color="#176B87" />
-            </View>
-            <View style={styles.insightContent}>
-              <Text style={styles.insightLabel}>{item.label}</Text>
-              <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${item.value * 100}%` }]} />
-              </View>
-              <Text style={styles.insightPercent}>{Math.round(item.value * 100)}%</Text>
-            </View>
-          </View>
+      <Text style={styles.sectionTitle}>Benefits of Green Building Certifications</Text>
+      <View style={styles.card}>
+        <Text style={styles.content}>
+          Obtaining a green building certification offers several benefits, including:
+        </Text>
+        {certificationBenefits.map((item, index) => (
+          <Text key={index} style={styles.listItem}>
+            <Text style={styles.boldText}>{item.title}</Text>: {item.description}
+          </Text>
         ))}
       </View>
 
+      <Text style={styles.sectionTitle}>Considerations When Choosing a Certification</Text>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Personalized Recommendations</Text>
-        <Text style={styles.subtitle}>AI-suggested learning paths</Text>
-
-        {recommendations.map((rec, index) => (
-          <TouchableOpacity key={index} onPress={rec.onPress}>
-            <View style={styles.recommendationCard}>
-              <Text style={styles.recommendationIcon}>💡</Text>
-              <View style={styles.recommendationTextContainer}>
-                <Text style={styles.recommendationTitle}>{rec.title}</Text>
-                <Text style={styles.recommendationDesc}>{rec.desc}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+        <Text style={styles.content}>
+          When selecting a green building certification, consider the following factors:
+        </Text>
+        {certificationConsiderations.map((item, index) => (
+          <Text key={index} style={styles.listItem}>
+            <Text style={styles.boldText}>{item.title}</Text>: {item.description}
+          </Text>
         ))}
+      </View>
+
+      <Text style={styles.sectionTitle}>Conclusion</Text>
+      <View style={styles.card}>
+        <Text style={styles.content}>
+          Green building certifications provide a structured approach to achieving sustainability in the built environment. By adhering to recognized standards, projects can minimize their environmental impact, enhance occupant well-being, and achieve long-term operational savings. Selecting the appropriate certification system is crucial to align with the project's goals and ensure successful implementation.
+        </Text>
+      </View>
+
+      <Text style={styles.sectionTitle}>Further Reading</Text>
+      <View style={styles.linkBox}>
+        <Text style={styles.linkText}>• WBDG: Green Building Standards and Certification Systems</Text>
+        <Text style={styles.linkText}>• UCEM: Understanding Green Building Certifications</Text>
+        <Text style={styles.linkText}>• LEED v4 for Building Design and Construction</Text>
+        <Text style={styles.linkText}>• National Institute of Building Sciences: Green Building Facts</Text>
       </View>
     </ScrollView>
   );
 };
 
+const greenBuildingCertifications = [
+  {
+    title: 'LEED (Leadership in Energy and Environmental Design)',
+    description: 'LEED is one of the most widely used green building certification systems globally. Developed by the U.S. Green Building Council, it provides a framework for healthy, efficient, and cost-saving green buildings. LEED certification is awarded based on performance in several categories, including energy use, lighting, water, and material use. Projects earn points for various green building strategies across these categories.'
+  },
+  {
+    title: 'BREEAM (Building Research Establishment Environmental Assessment Method)',
+    description: 'BREEAM is the world\'s first environmental assessment method for buildings, developed in the UK. It assesses the sustainability performance of buildings across various categories, including energy, water, materials, management, health and well-being, pollution, and transport. BREEAM provides ratings from Pass to Outstanding, acknowledging buildings that excel in environmental performance.'
+  },
+  {
+    title: 'WELL Building Standard',
+    description: 'The WELL Building Standard focuses on the health and well-being of building occupants. It assesses features of the built environment that impact human health, such as air, water, nourishment, light, fitness, and mind. WELL certification is awarded based on performance in these categories, promoting a holistic approach to building design that enhances occupant health and productivity.'
+  },
+  {
+    title: 'HQE (High Environmental Quality)',
+    description: 'HQE is a French certification system that evaluates buildings based on their environmental quality. It focuses on aspects such as energy efficiency, water management, indoor air quality, and the use of sustainable materials. HQE certification is awarded to buildings that meet specific criteria in these areas, promoting sustainable construction practices.'
+  },
+  {
+    title: 'DGNB (German Sustainable Building Council)',
+    description: 'DGNB is a German certification system that assesses buildings based on a comprehensive set of criteria, including ecological quality, economic quality, sociocultural and functional quality, technical quality, process quality, and site quality. It emphasizes a life-cycle approach to building design and construction, promoting sustainability throughout the building\'s life span.'
+  }
+];
+
+const certificationBenefits = [
+  {
+    title: 'Environmental Impact Reduction',
+    description: 'Minimizing energy consumption, water usage, and waste generation.'
+  },
+  {
+    title: 'Cost Savings',
+    description: 'Lower operational costs through efficient resource use and reduced energy bills.'
+  },
+  {
+    title: 'Enhanced Marketability',
+    description: 'Increased property value and appeal to environmentally conscious tenants and buyers.'
+  },
+  {
+    title: 'Regulatory Compliance',
+    description: 'Meeting or exceeding local building codes and regulations related to sustainability.'
+  },
+  {
+    title: 'Health and Well-being',
+    description: 'Improved indoor environmental quality leading to better occupant health and productivity.'
+  }
+];
+
+const certificationConsiderations = [
+  {
+    title: 'Project Location',
+    description: 'Some certifications may be more applicable or recognized in certain regions.'
+  },
+  {
+    title: 'Building Type',
+    description: 'Certain certifications may be tailored to specific building types, such as residential, commercial, or industrial.'
+  },
+  {
+    title: 'Goals and Priorities',
+    description: 'Align the certification with the project\'s sustainability goals, whether it\'s energy efficiency, occupant health, or environmental impact.'
+  },
+  {
+    title: 'Budget and Resources',
+    description: 'Consider the costs associated with obtaining certification and the resources required to meet the criteria.'
+  }
+];
+
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: '#f0f4f7',
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
+    backgroundColor: '#EEF5FF',
+    padding: 20,
+    paddingTop: 30,
   },
-  scrollContentContainer: {
-    paddingBottom: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  updatedBadge: {
-    backgroundColor: '#e0f0ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  updatedText: {
-    fontSize: 10,
-    color: '#176B87',
-    fontWeight: '500',
-  },
-  cardTitle: {
-    fontSize: 18,
+  title: {
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#176B87',
+    textAlign: 'center',
+    marginBottom: 0,
+    paddingVertical: 12,
+    backgroundColor: '#EEF5FF',
+    borderRadius: 12,
   },
-  subtitle: {
-    fontSize: 13,
-    color: '#7a7a7a',
-    marginBottom: 10,
-  },
-  summaryBox: {
-    backgroundColor: '#e8f0fc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-  },
-  summaryTitle: {
+  sectionTitle: {
+    fontSize: 22,
     fontWeight: '600',
+    color: '#176B87',
+    marginVertical: 16,
+    letterSpacing: 0.5,
+  },
+  card: {
+    backgroundColor: '#EEF5FF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  content: {
+    fontSize: 16,
+    color: '#176B87',
+    lineHeight: 24,
+    marginBottom: 12,
+    textAlign: 'justify',
+  },
+  listItem: {
+    fontSize: 16,
+    color: '#176B87',
+    marginBottom: 6,
+    textAlign: 'justify',
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  linkBox: {
+    backgroundColor: '#EEF5FF',
+    padding: 12,
+    borderRadius: 10,
+  },
+  linkText: {
+    fontSize: 16,
     color: '#176B87',
     marginBottom: 6,
   },
-  summaryText: {
-    fontSize: 13,
-    color: '#333',
-    textAlign: 'justify',
-  },
-  insightRow: {
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  insightIcon: {
-    marginRight: 10,
-  },
-  insightContent: {
-    flex: 1,
-  },
-  insightLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-  },
-  progressBarFill: {
-    height: 8,
-    backgroundColor: '#176B87',
-    borderRadius: 4,
-  },
-  insightPercent: {
-    textAlign: 'right',
-    fontSize: 12,
-    color: '#176B87',
-    marginTop: 2,
-  },
-  recommendationCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f7faff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    alignItems: 'flex-start',
-  },
-  recommendationIcon: {
-    fontSize: 20,
-    marginRight: 10,
-    marginTop: 3,
-  },
-  recommendationTextContainer: {
-    flex: 1,
-  },
-  recommendationTitle: {
-    fontSize: 14,
+  cardTitle: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#176B87',
-    marginBottom: 4,
-  },
-  recommendationDesc: {
-    fontSize: 12,
-    color: '#444',
-  },
+    marginBottom: 8,
+  }
 });
 
-export default ModernArchPrinciples;
+export default GreenBuildingCert;

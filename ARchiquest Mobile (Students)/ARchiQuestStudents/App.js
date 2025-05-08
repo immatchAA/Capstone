@@ -20,7 +20,8 @@ import EnergyEfficientBuilding from './Modules/EnergyEfficientBuilding'
 import GreenBuildingCert from './Modules/GreenBuildingCert'
 import RenewableEnergySystems from './Modules/RenewableEnergySystems'
 import FireSafety from './Modules/FireSafety'
-
+import UrbanPlanningFundamentals from './Modules/UrbanPlanningFundamentals'
+import Profile from './Profile/Profile';
 
 const Stack = createStackNavigator();
 
@@ -39,6 +40,7 @@ export default function App() {
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
         <Stack.Screen name="MainLanding" component={MainLanding} />
         <Stack.Screen name='Modules' component={Modules} />
+        <Stack.Screen name='Profile' component={Profile} />
 
         {/*MODULES*/}
         <Stack.Screen name='ModernArchPrinciples' component={ModernArchPrinciples} />
@@ -50,6 +52,7 @@ export default function App() {
         <Stack.Screen name='GreenBuildingCert' component={GreenBuildingCert} />
         <Stack.Screen name='RenewableEnergySystems' component={RenewableEnergySystems} />
         <Stack.Screen name='FireSafety' component={FireSafety} />
+        <Stack.Screen name='UrbanPlanningFundamentals' component={UrbanPlanningFundamentals} />
       </Stack.Navigator>
     </NavigationContainer>
   );
