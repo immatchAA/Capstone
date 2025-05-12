@@ -11,6 +11,10 @@ import DesignPlan from './UploadDesign/DesignPlan';
 import MaterialsTab from './UploadDesign/MaterialsTab';
 import MainLanding from './Dashboard/mainLanding';
 
+import DesignPlanDetails from './DesignPlan/DesignPlanDetails'; 
+import DesignProgressScreen from './DesignPlan/DesignProgressScreen';
+import DesignPlanViewer from './DesignPlan/DesignPlanViewer';
+
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -27,6 +31,10 @@ export default function App() {
         <Stack.Screen name='DesignPlan' component={DesignPlan} />
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
         <Stack.Screen name="MainLanding" component={MainLanding} />
+
+        <Stack.Screen name="DesignPlanViewer" component={DesignPlanViewer} />
+        <Stack.Screen name="DesignProgressScreen" component={DesignProgressScreen} />
+        <Stack.Screen name="DesignPlanDetails" component={DesignPlanDetails} />
       </Stack.Navigator>
     </NavigationContainer>
   );
