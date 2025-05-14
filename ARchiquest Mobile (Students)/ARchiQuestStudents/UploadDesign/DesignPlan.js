@@ -4,8 +4,6 @@ import Slider from '@react-native-community/slider';
 //import { Picker } from '@react-native-picker/picker';
 import { useNavigation} from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import { collection } from 'firebase/firestore';
-import { storage, db } from '../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL, addDoc} from 'firebase/storage';
 import * as FileSystem from 'expo-file-system';
 import * as Permissions from 'expo-permissions';
