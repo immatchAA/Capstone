@@ -23,6 +23,10 @@ import FireSafety from './ReadingMaterials/FireSafety'
 import UrbanPlanningFundamentals from './ReadingMaterials/UrbanPlanningFundamentals'
 import Profile from './Profile/Profile';
 
+import DesignPlanDetails from './DesignPlan/DesignPlanDetails'; 
+import DesignProgressScreen from './DesignPlan/DesignProgressScreen';
+import DesignPlanViewer from './DesignPlan/DesignPlanViewer';
+
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -39,6 +43,12 @@ export default function App() {
         <Stack.Screen name='DesignPlan' component={DesignPlan} />
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
         <Stack.Screen name="MainLanding" component={MainLanding} />
+
+
+        <Stack.Screen name="DesignPlanViewer" component={DesignPlanViewer} />
+        <Stack.Screen name="DesignProgressScreen" component={DesignProgressScreen} />
+        <Stack.Screen name="DesignPlanDetails" component={DesignPlanDetails} />
+
         <Stack.Screen name='ReadingMaterials' component={ReadingMaterials} />
         <Stack.Screen name='Profile' component={Profile} />
 
