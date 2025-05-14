@@ -81,6 +81,26 @@ const UserRegister = ({ navigation }) => {
     confirmPassword: '',
   });
 
+  const validatePassword = (password) => {
+    const errors = [];
+    if (password.length < 8) {
+      errors.push("Password must be at least 8 characters.");
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push("Password must have at least 1 uppercase letter.");
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push("Password must have at least 1 lowercase letter.");
+    }
+    if (!/\d/.test(password)) {
+      errors.push("Password must have at least 1 number.");
+    }
+    if (!/[@$!%*?&]/.test(password)) {
+      errors.push("Password must have at least 1 symbol.");
+    }
+    return errors;
+  };
+
   const handleSignUp = async () => {
     let isValid = true;
   
@@ -107,6 +127,12 @@ const UserRegister = ({ navigation }) => {
     if (!password) {
       newErrors.password = "Password is required";
       isValid = false;
+    } else {
+      const passwordErrors = validatePassword(password);
+      if (passwordErrors.length > 0) {
+        newErrors.password = passwordErrors.join(', ');
+        isValid = false;
+      }
     }
     if (password !== confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";

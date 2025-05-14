@@ -10,6 +10,18 @@ import StudentProgress from './StudentProgressMonitoring/StudentProgress';
 import DesignPlan from './UploadDesign/DesignPlan';
 import MaterialsTab from './UploadDesign/MaterialsTab';
 import MainLanding from './Dashboard/mainLanding';
+import ReadingMaterials from './ReadingMaterials/ReadingMaterials';
+import ModernArchPrinciples from './ReadingMaterials/ModernArchPrinciples'
+import SustainableBuildingDesign from './ReadingMaterials/SustainableBuildingDesign'
+import BuildingMaterials from './ReadingMaterials/BuildingMaterials'
+import BuildingInfoModeling from './ReadingMaterials/BuildingInfoModeling'
+import SmartBuildingTechs from './ReadingMaterials/SmartBuildingTechs'
+import EnergyEfficientBuilding from './ReadingMaterials/EnergyEfficientBuilding'
+import GreenBuildingCert from './ReadingMaterials/GreenBuildingCert'
+import RenewableEnergySystems from './ReadingMaterials/RenewableEnergySystems'
+import FireSafety from './ReadingMaterials/FireSafety'
+import UrbanPlanningFundamentals from './ReadingMaterials/UrbanPlanningFundamentals'
+import Profile from './Profile/Profile';
 
 import DesignPlanDetails from './DesignPlan/DesignPlanDetails'; 
 import DesignProgressScreen from './DesignPlan/DesignProgressScreen';
@@ -32,9 +44,25 @@ export default function App() {
         <Stack.Screen name="MaterialsTab" component={MaterialsTab} />
         <Stack.Screen name="MainLanding" component={MainLanding} />
 
+
         <Stack.Screen name="DesignPlanViewer" component={DesignPlanViewer} />
         <Stack.Screen name="DesignProgressScreen" component={DesignProgressScreen} />
         <Stack.Screen name="DesignPlanDetails" component={DesignPlanDetails} />
+
+        <Stack.Screen name='ReadingMaterials' component={ReadingMaterials} />
+        <Stack.Screen name='Profile' component={Profile} />
+
+        {/*READING MATERIALS*/}
+        <Stack.Screen name='ModernArchPrinciples' component={ModernArchPrinciples} />
+        <Stack.Screen name='SustainableBuildingDesign' component={SustainableBuildingDesign} />
+        <Stack.Screen name='BuildingMaterials' component={BuildingMaterials} />
+        <Stack.Screen name='BuildingInfoModeling' component={BuildingInfoModeling} />
+        <Stack.Screen name='SmartBuildingTechs' component={SmartBuildingTechs} />
+        <Stack.Screen name='EnergyEfficientBuilding' component={EnergyEfficientBuilding} />
+        <Stack.Screen name='GreenBuildingCert' component={GreenBuildingCert} />
+        <Stack.Screen name='RenewableEnergySystems' component={RenewableEnergySystems} />
+        <Stack.Screen name='FireSafety' component={FireSafety} />
+        <Stack.Screen name='UrbanPlanningFundamentals' component={UrbanPlanningFundamentals} />
       </Stack.Navigator>
     </NavigationContainer>
   );
