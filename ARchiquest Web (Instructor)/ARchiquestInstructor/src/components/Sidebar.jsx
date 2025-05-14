@@ -5,53 +5,53 @@ import { FaHome, FaTasks, FaChartLine, FaPencilRuler, FaStore, FaSignOutAlt, FaU
 
 function Sidebar() {
   return (
-    <div className="sidebar">
+    <div className="custom-sidebar">
       {/* Profile Section */}
-      <div className="profile">
-        <div className="profile-pic"></div> 
-        <div className="profile-info">
+      <div className="custom-profile">
+        <div className="custom-profile-pic"></div> 
+        <div className="custom-profile-info">
           <h3>Bombardini</h3>
           <p>Crocodini</p>
         </div>
       </div>
 
-      <hr className="divider" />
+      <hr className="custom-divider" />
 
       {/* Search Box */}
-      <div className="search-box">
+      <div className="custom-search-box">
         <input type="text" placeholder="Search..." />
       </div>
 
       {/* Navigation Links */}
-      <nav className="nav-links">
-        <Link to="/dashboard" className="nav-item">
-          <FaHome className="icon" /> Dashboard
+      <nav className="custom-nav-links">
+        <Link to="/dashboard" className="custom-nav-item">
+          <FaHome className="custom-icon" /> Dashboard
         </Link>
 
-        <Link to="/classkey" className="nav-item">
-          <FaTasks className="icon" /> Class Keys
+        <Link to="/classkey" className="custom-nav-item">
+          <FaTasks className="custom-icon" /> Class Keys
         </Link>
 
-        <Link to="/student-progress" className="nav-item">
-          <FaChartLine className="icon" /> Student Progress
+        <Link to="/student-progress" className="custom-nav-item">
+          <FaChartLine className="custom-icon" /> Student Progress
         </Link>
 
-        <Link to="/createdesignplan" className="nav-item">
-          <FaPencilRuler className="icon" /> Create Design
+        <Link to="/createdesignplan" className="custom-nav-item">
+          <FaPencilRuler className="custom-icon" /> Create Design
         </Link>
 
-        <Link to="/Virtualstore" className="nav-item">
-          <FaStore className="icon" /> Virtual Store
+        <Link to="/Virtualstore" className="custom-nav-item">
+          <FaStore className="custom-icon" /> Virtual Store
         </Link>
 
-        <hr className="divider" />
+        <hr className="custom-divider" />
 
-        <Link to="/login" className="nav-item">
-          <FaSignOutAlt className="icon" /> Logout
+        <Link to="/login" className="custom-nav-item">
+          <FaSignOutAlt className="custom-icon" /> Logout
         </Link>
 
-        <Link to="/account" className="nav-item">
-          <FaUser className="icon" /> Account
+        <Link to="/accountE" className="custom-nav-item">
+          <FaUser className="custom-icon" /> Account
         </Link>
       </nav>
     </div>
