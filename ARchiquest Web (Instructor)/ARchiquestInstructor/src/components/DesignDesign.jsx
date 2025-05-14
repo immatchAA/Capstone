@@ -62,86 +62,88 @@ function DesignDesign() {
   };
 
   // Function to handle the Publish Plan button click
-  const handlePublishPlan = async () => {
-    // Validate the form data
-    if (!planName || !planDescription || !budget || !currency) {
-      alert("Please fill in all the fields before submitting.");
-      return;
-    }
+const handlePublishPlan = async () => {
+  if (!planName || !planDescription || !budget || !currency) {
+    alert("Please fill in all the fields before submitting.");
+    return;
+  }
 
-    // Ensure teacherId is set before proceeding
-    if (!teacherId) {
-      alert("Please log in first!");
-      return;
-    }
+  if (!teacherId) {
+    alert("Please log in first!");
+    return;
+  }
 
-    setLoading(true); // Start loading state
+  setLoading(true);
 
-    let designFileUrl = ''; // Initialize designFileUrl
+  let designFileUrl = '';
+  let filePath = ''; // ✅ Declare filePath outside to store it for DB
 
-    // Check if file is uploaded
-    if (uploadedFile) {
-      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-      if (uploadedFile.size > MAX_FILE_SIZE) {
-        alert("File size exceeds the 5MB limit.");
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: Upload the file to Supabase storage if it's selected
-      const filePath = `designs/${teacherId}/${uuidv4()}_${uploadedFile.name}`; // Use teacherId and uuidv4 to create unique path
-
-      // 1. Upload with overwrite allowed (upsert)
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('upload')  // Make sure the bucket name is correct
-        .upload(filePath, uploadedFile, { upsert: true });
-
-      if (uploadError) {
-        console.error("❌ Upload failed:", uploadError);
-        alert("Upload failed: " + uploadError.message);
-        setLoading(false);
-        return;
-      }
-
-      // 2. Generate signed URL (optional, if you need the URL of the uploaded file)
-      const { signedURL, error: urlError } = await supabase
-        .storage
-        .from('upload')
-        .getPublicUrl(filePath);
-
-      if (urlError) {
-        console.error("❌ Failed to generate file URL:", urlError);
-        setLoading(false);
-        return;
-      }
-
-      designFileUrl = signedURL; // Assign URL to the variable
-    }
-
-    // Step 3: Save plan in DB (whether the file is uploaded or not)
-    const { error: insertError } = await supabase
-      .from('design_plan')
-      .insert([{
-        teacher_id: teacherId,
-        plan_name: planName,
-        description: planDescription,
-        budget,
-        currency,
-        design_file_url: designFileUrl || '',  // Use the file URL if it's uploaded, or an empty string
-        materials: [], // Initialize materials as an empty array (you can populate this later)
-      }]);
-
-    if (insertError) {
-      alert('❌ Failed to publish the design plan!');
-      console.error(insertError);
+  if (uploadedFile) {
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (uploadedFile.size > MAX_FILE_SIZE) {
+      alert("File size exceeds the 5MB limit.");
       setLoading(false);
       return;
     }
 
+    // ✅ Step 1: Build unique file path
+    const filePath = `designs/${teacherId}/${uuidv4()}_${uploadedFile.name}`;
+    
+
+
+    // ✅ Step 2: Upload to Supabase
+    const { error: uploadError } = await supabase.storage
+      .from('upload')
+      .upload(filePath, uploadedFile, { upsert: true });
+
+    if (uploadError) {
+      console.error("❌ Upload failed:", uploadError);
+      alert("Upload failed: " + uploadError.message);
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Step 3: Get public URL (for optional direct file preview)
+    const { data: { publicUrl }, error: urlError } = await supabase
+      .storage
+      .from('upload')
+      .getPublicUrl(filePath);
+
+    if (urlError) {
+      console.error("❌ Failed to get public URL:", urlError);
+      setLoading(false);
+      return;
+    }
+
+    designFileUrl = publicUrl; // ✅ This is optional and not required by the mobile app
+  }
+
+  // ✅ Step 4: Save record in design_plan with file_path
+  const { error: insertError } = await supabase
+    .from('design_plan')
+    .insert([{
+      teacher_id: teacherId,
+      plan_name: planName,
+      description: planDescription,
+      budget,
+      currency,
+      file_path: filePath,               // ✅ Important for mobile app
+      design_file_url: designFileUrl,    // Optional for web display
+      materials: [],
+    }]);
+
+  if (insertError) {
+    console.error('❌ Failed to publish design plan:', insertError);
+    alert('❌ Failed to publish the design plan!');
     setLoading(false);
-    alert('✅ Design plan published successfully!');
-    //navigate('/'); Redirect after publishing (optional)
-  };
+    return;
+  }
+
+  setLoading(false);
+  alert('✅ Design plan published successfully!');
+  // navigate('/'); // Optional: redirect after success
+};
+
 
   return (
     <div className="dashboard-wrapper">
