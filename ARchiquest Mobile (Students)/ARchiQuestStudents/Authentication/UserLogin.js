@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { supabase } from '../supabaseClient';
@@ -8,8 +8,37 @@ const UserLogin = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+  });
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setEmail('');
+      setPassword('');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const handleLogin = async () => {
-    if (email && password) {
+    let isValid = true;
+    const newErrors = { email: '', password: '' };
+  
+    if (!email) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    }
+  
+    if (!password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    }
+  
+    setErrors(newErrors);
+  
+    if (isValid) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -18,18 +47,33 @@ const UserLogin = ({ navigation }) => {
       if (error) {
         alert('Login failed: ' + error.message);
       } else {
-        alert('Login Successful');
-        navigation.navigate('Dashboard');
+        const { user } = data;
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+  
+        if (profileError) {
+          alert('Error fetching user profile: ' + profileError.message);
+          return;
+        }
+  
+        if (userProfile.role !== 'student' && userProfile.role !== 'Student') {
+          alert('Access denied. Only students can log in.');
+          await supabase.auth.signOut();
+        } else {
+          alert('Welcome to ARchiQuest');
+          navigation.navigate('MainLanding');
+        }
       }
-    } else {
-      alert('Please fill in all fields');
     }
   };
 
   const handleForgotPassword = async () => {
     if (email) {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
-  
+
       if (error) {
         alert('Error: ' + error.message);
       } else {
@@ -39,12 +83,11 @@ const UserLogin = ({ navigation }) => {
       alert('Please enter your email.');
     }
   };
-  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ARchiQuest</Text>
-      <Text style={styles.subtitle}>Student Login</Text>
+      <Text style={styles.subtitle}>Login</Text>
 
       <Text style={styles.label}>Email</Text>
       <TextInput
@@ -54,6 +97,7 @@ const UserLogin = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
       />
+      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
       <Text style={styles.label}>Password</Text>
       <View style={styles.passwordContainer}>
@@ -73,6 +117,7 @@ const UserLogin = ({ navigation }) => {
           />
         </TouchableOpacity>
       </View>
+      {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
 
       <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
         <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
@@ -93,25 +138,93 @@ const UserLogin = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5', padding: 20 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#176B87' },
-  subtitle: { fontSize: 14, color: '#7a7a7a', marginBottom: 20 },
-  label: { alignSelf: 'flex-start', marginLeft: 20, fontSize: 16, marginTop: 10 },
-  input: { width: '90%', padding: 10, borderWidth: 1, borderRadius: 8, borderColor: '#176B87', backgroundColor: '#fff', marginBottom: 10 },
-  passwordContainer: { flexDirection: 'row', alignItems: 'center', width: '90%', paddingHorizontal: 2, borderWidth: 1, borderRadius: 8, borderColor: '#176B87', backgroundColor: '#fff', marginBottom: 10 },
-  passwordInput: { flex: 1, padding: 10 },
-  eyeIcon: { padding: 10 },
-  loginButton: { backgroundColor: '#176B87', paddingVertical: 12, width: '90%', alignItems: 'center', borderRadius: 8, marginVertical: 10 },
-  loginButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  forgotPasswordContainer: { alignSelf: 'flex-end', marginRight: 20, marginTop: -5 },
-  forgotPasswordText: { color: '#007bff' },
-  signUpContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  signUpLink: { color: '#007bff' },
-  orLogin: { marginTop: 10, fontSize: 14, color: '#555' },
-  googleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#176B87', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20, width: '90%', marginTop: 10 },
-  googleButtonText: { marginLeft: 10, color: '#176B87', fontSize: 16, fontWeight: '500' },
-  modalBackground: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' },
-  modalContent: { backgroundColor: 'white', padding: 20, borderRadius: 10 },
+  container: { 
+    flex: 1, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: '#fff', 
+    padding: 20 
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    color: '#176B87' 
+  },
+  subtitle: { 
+    fontSize: 14, 
+    color: '#7a7a7a', 
+    marginBottom: 20 
+  },
+  label: { 
+    alignSelf: 'flex-start', 
+    marginLeft: 20, 
+    fontSize: 16, 
+    marginTop: 10 
+  },
+  input: { 
+    width: '90%', 
+    padding: 10, 
+    borderWidth: 1, 
+    borderRadius: 8, 
+    borderColor: '#176B87', 
+    backgroundColor: '#fff', 
+    marginBottom: 10 
+  },
+  passwordContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    width: '90%', 
+    paddingHorizontal: 2, 
+    borderWidth: 1, 
+    borderRadius: 8, 
+    borderColor: '#176B87', 
+    backgroundColor: '#fff', 
+    marginBottom: 10 
+  },
+  passwordInput: { 
+    flex: 1, 
+    padding: 10 
+  },
+  eyeIcon: { 
+    padding: 10 
+  },
+  loginButton: { 
+    backgroundColor: '#176B87', 
+    paddingVertical: 12, 
+    width: '90%', 
+    alignItems: 'center', 
+    borderRadius: 8, 
+    marginVertical: 10 
+  },
+  loginButtonText: { 
+    color: '#fff', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
+  },
+  forgotPasswordContainer: { 
+    alignSelf: 'flex-end', 
+    marginRight: 20, 
+    marginTop: -5 
+  },
+  forgotPasswordText: { 
+    color: '#007bff' 
+  },
+  signUpContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 10 
+  },
+  signUpLink: { 
+    color: '#007bff' 
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 5,
+    alignSelf: 'flex-start',
+    marginLeft: 20,
+  },
 });
 
 export default UserLogin;
