@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Sidebar.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaHome, FaTasks, FaChartLine, FaPencilRuler, FaStore, FaSignOutAlt, FaUser } from 'react-icons/fa';
@@ -7,6 +7,41 @@ import { supabase } from '../../supabaseClient';
 function Sidebar() {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [userProfile, setUserProfile] = useState({ name: '', role: '' });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      // 1. Get currently logged-in user
+      const {
+        data: { user },
+        error: sessionError,
+      } = await supabase.auth.getUser();
+
+      if (sessionError || !user) {
+        console.error('Failed to get user: ', sessionError?.message);
+        navigate('/login');
+        return;
+      }
+
+      // 2. Fetch from "Users" table using user.id
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('first_name, last_name, role')
+        .eq('id', user.id)
+        .single();
+
+     if (profileError) {
+        console.error('Failed to fetch user profile: ', profileError.message);
+      } else {
+        setUserProfile({
+          name: `${profile.first_name} ${profile.last_name}`,
+          role: profile.role || 'Unknown',
+        });
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]); // <-- Add dependency array so useEffect runs once
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -24,8 +59,8 @@ function Sidebar() {
       <div className="profile">
         <div className="profile-pic"></div>
         <div className="profile-info">
-          <h3>Bombardini</h3>
-          <p>Crocodini</p>
+          <h3>{userProfile.name}</h3>
+          <p>{userProfile.role}</p>
         </div>
       </div>
 

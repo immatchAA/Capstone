@@ -117,3 +117,31 @@
     color: #333;
   }
   
+  .challenge-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.challenge-table th,
+.challenge-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.challenge-table th {
+  background-color: #f5f7fb;
+  color: #333;
+}
+
+.challenge-table tr:hover {
+  background-color: #f0f8ff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row td {
+  font-weight: 500;
+}
