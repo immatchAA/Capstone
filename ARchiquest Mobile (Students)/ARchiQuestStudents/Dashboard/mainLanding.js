@@ -1,9 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Animated, Dimensions, Image, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Modal, 
+  ScrollView, 
+  Animated, 
+  Dimensions, 
+  Image, 
+  Alert,
+  SafeAreaView,
+  Platform,
+  StatusBar
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../supabaseClient';
 import CostEstimateSimulator from './CostEstimateSimulator/CostEstimateSimulator';
+
+const { width, height } = Dimensions.get('window');
+const isSmallScreen = width < 768;
 
 const MainLanding = () => {
   const navigation = useNavigation();
@@ -173,7 +191,7 @@ const MainLanding = () => {
     }
   };
 
-// Logout function
+  // Logout function
   const handleLogout = async () => {
     Alert.alert(
       "Logout",
@@ -250,13 +268,273 @@ const MainLanding = () => {
     return <CostEstimateSimulator onBack={() => setShowCostEstimator(false)} />;
   }
 
+  // Mobile layout
+  if (isSmallScreen) {
+    return (
+      <SafeAreaView style={styles.mobileContainer}>
+        <StatusBar barStyle="dark-content" backgroundColor="#EEF5FF" />
+        
+        {/* Mobile Header */}
+        <View style={styles.mobileHeader}>
+          <View style={styles.mobileHeaderLeft}>
+            <TouchableOpacity 
+              style={styles.mobileMenuButton}
+              onPress={() => setIsSideNavVisible(true)}
+            >
+              <Ionicons name="menu-outline" size={24} color="#176BB7" />
+            </TouchableOpacity>
+            <Text style={styles.mobileWelcomeText}>
+              Welcome, {studentName || 'Student'}
+            </Text>
+          </View>
+          
+          <View style={styles.mobileHeaderRight}>
+            <TouchableOpacity style={styles.mobileHeaderIcon}>
+              <Ionicons name="call-outline" size={20} color="#176BB7" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.mobileHeaderIcon}>
+              <Ionicons name="notifications-outline" size={20} color="#176BB7" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.mobileProfileButton}>
+              <View style={styles.mobileProfileAvatar}>
+                <Text style={styles.mobileProfileInitial}>{studentName ? studentName[0] : 'S'}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {/* Mobile Content */}
+        <ScrollView 
+          style={styles.mobileContentArea} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.mobileContentContainer}
+        >
+          <Text style={styles.mobileSectionTitle}>Active Classes</Text>
+          
+          {activeClasses.length > 0 ? (
+            activeClasses.map((classItem, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={styles.mobileClassCard}
+                onPress={() => handleNavigateToDesignPlan(classItem.id, classItem.class_key)}
+              >
+                <View style={styles.mobileClassImageContainer}>
+                  <View style={[styles.mobileClassImagePlaceholder, { backgroundColor: '#FFE5E5' }]}>
+                    <Ionicons name="school-outline" size={30} color="#FF6B6B" />
+                  </View>
+                </View>
+                <View style={styles.mobileClassInfo}>
+                  <Text style={styles.mobileClassName}>Class #{classItem.id}</Text>
+                  <Text style={styles.mobileClassDescription}>
+                    Key: {classItem.class_key}
+                  </Text>
+                  <Text style={styles.mobileClassDescription}>
+                    Joined: {new Date(classItem.created_at).toLocaleDateString()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.mobileNoClassesText}>No active classes found</Text>
+          )}
+          
+          <Text style={styles.mobileSectionTitle}>Learning Activities</Text>
+          
+          <TouchableOpacity 
+            style={styles.mobileActivityCard}
+            onPress={() => setShowCostEstimator(true)}
+          >
+            <View style={styles.mobileActivityImageContainer}>
+              <View style={[styles.mobileActivityImagePlaceholder, { backgroundColor: '#E0EDFF' }]}>
+                <Ionicons name="calculator-outline" size={30} color="#176BB7" />
+              </View>
+            </View>
+            <View style={styles.mobileActivityInfo}>
+              <Text style={styles.mobileActivityName}>Cost Estimate Simulator</Text>
+              <Text style={styles.mobileActivityDescription} numberOfLines={2}>
+                Estimate construction costs and manage project budgets
+              </Text>
+              <TouchableOpacity 
+                style={styles.mobileActivityButton}
+                onPress={() => setShowCostEstimator(true)}
+              >
+                <Text style={styles.mobileActivityButtonText}>START</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.mobileActivityCard}>
+            <View style={styles.mobileActivityImageContainer}>
+              <View style={[styles.mobileActivityImagePlaceholder, { backgroundColor: '#FFE5E5' }]}>
+                <Ionicons name="search-outline" size={30} color="#FF6B6B" />
+              </View>
+            </View>
+            <View style={styles.mobileActivityInfo}>
+              <Text style={styles.mobileActivityName}>AR Scavenger Hunt</Text>
+              <Text style={styles.mobileActivityDescription} numberOfLines={2}>
+                Find architectural elements in your environment
+              </Text>
+              <TouchableOpacity style={styles.mobileActivityButton}>
+                <Text style={styles.mobileActivityButtonText}>START</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+        
+        {/* Mobile Bottom Navigation */}
+        <View style={styles.mobileBottomNav}>
+          <TouchableOpacity style={styles.mobileNavItem}>
+            <Ionicons name="home" size={24} color="#176BB7" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.mobileNavItem}>
+            <Ionicons name="person-outline" size={24} color="#176BB7" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.mobileAddButton}
+            onPress={() => setIsJoinModalVisible(true)}
+          >
+            <Ionicons name="add" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.mobileNavItem}
+            onPress={() => navigation.navigate('ReadingMaterials')}
+          >
+            <Ionicons name="book-outline" size={24} color="#176BB7" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.mobileNavItem}>
+            <Ionicons name="settings-outline" size={24} color="#176BB7" />
+          </TouchableOpacity>
+        </View>
+        
+        {/* Mobile Side Navigation */}
+        <Animated.View 
+          style={[
+            styles.mobileSideNav,
+            { transform: [{ translateX: slideAnim }] }
+          ]}
+        >
+          <View style={styles.mobileSideNavHeader}>
+            <TouchableOpacity 
+              style={styles.mobileSideNavClose}
+              onPress={() => setIsSideNavVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#176BB7" />
+            </TouchableOpacity>
+            <Text style={styles.mobileSideNavTitle}>ARchiQuest</Text>
+          </View>
+          
+          <View style={styles.mobileSideNavContent}>
+            <TouchableOpacity style={styles.mobileSideNavItem}>
+              <Ionicons name="home" size={24} color="#176BB7" />
+              <Text style={styles.mobileSideNavText}>Home</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.mobileSideNavItem}>
+              <Ionicons name="person" size={24} color="#176BB7" />
+              <Text style={styles.mobileSideNavText}>Profile</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.mobileSideNavItem}
+              onPress={() => navigation.navigate('ReadingMaterials')}
+            >
+              <Ionicons name="book" size={24} color="#176BB7" />
+              <Text style={styles.mobileSideNavText}>Reading Materials</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.mobileSideNavItem}>
+              <Ionicons name="settings" size={24} color="#176BB7" />
+              <Text style={styles.mobileSideNavText}>Settings</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.mobileSideNavItem, styles.mobileSideNavLogout]}
+              onPress={handleLogout}
+            >
+              <Ionicons name="log-out" size={24} color="#FF6B6B" />
+              <Text style={styles.mobileSideNavLogoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+        
+        {/* Mobile Join Class Modal */}
+        <Modal
+          transparent={true}
+          visible={isJoinModalVisible}
+          animationType="fade"
+          onRequestClose={() => setIsJoinModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Join Class</Text>
+              <Text style={styles.modalText}>Enter the class key provided by your teacher</Text>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter class key"
+                  value={classKey}
+                  onChangeText={setClassKey}
+                  placeholderTextColor="#999"
+                />
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleJoinClass}
+                >
+                  <Text style={styles.modalButtonText}>Join Class</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => setIsJoinModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+        
+        {/* Help Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={isModalVisible}
+          onRequestClose={closeHelpModal}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Help</Text>
+              <Text style={styles.modalText}>{modalMessage}</Text>
+              <TouchableOpacity 
+                style={styles.modalButton} 
+                onPress={closeHelpModal}
+              >
+                <Text style={styles.modalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    );
+  }
+
+  // Desktop layout (original layout)
   return (
     <View style={styles.container}>
       {/* Left Sidebar */}
       <View style={styles.sidebar}>
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle} />
-          {/* Removed the Text component to avoid the fontSize error */}
         </View>
         
         <View style={styles.sidebarMenu}>
@@ -272,8 +550,7 @@ const MainLanding = () => {
             style={styles.sidebarMenuItem} 
             onPress={() => navigation.navigate('ReadingMaterials')}
           >
-            <Ionicons name="book-outline" size={24} color="#fff" />
-            
+            <Ionicons name="book-outline" size={24} color="#176BB7" />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.sidebarMenuItem}>
@@ -491,12 +768,14 @@ const MainLanding = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Help</Text>
             <Text style={styles.modalText}>{modalMessage}</Text>
-            <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
-              <TouchableOpacity style={styles.modalCloseButton} onPress={closeHelpModal}>
-                <Text style={styles.modalCloseText}>Close</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={closeHelpModal}
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -510,9 +789,10 @@ const MainLanding = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalText}>Enter Class Key</Text>
+            <Text style={styles.modalTitle}>Join Class</Text>
+            <Text style={styles.modalText}>Enter the class key provided by your teacher</Text>
 
-            <View style={{ width: '100%', marginBottom: 16 }}>
+            <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
                 placeholder="Enter class key"
@@ -524,17 +804,17 @@ const MainLanding = () => {
 
             <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={styles.modalCloseButton}
+                style={styles.modalButton}
                 onPress={handleJoinClass}
               >
-                <Text style={styles.modalCloseText}>Join Class</Text>
+                <Text style={styles.modalButtonText}>Join Class</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalCloseButton, { backgroundColor: '#EEF5FF' }]}
+                style={[styles.modalButton, styles.modalCancelButton]}
                 onPress={() => setIsJoinModalVisible(false)}
               >
-                <Text style={[styles.modalCloseText, { color: '#333' }]}>Close</Text>
+                <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -545,6 +825,7 @@ const MainLanding = () => {
 };
 
 const styles = StyleSheet.create({
+  // Original desktop styles
   container: {
     flex: 1,
     flexDirection: 'row',
@@ -572,7 +853,7 @@ const styles = StyleSheet.create({
   },
   sidebarMenu: {
     alignItems: 'center',
-    flex: 1, // Make the menu take up all available space
+    flex: 1,
   },
   sidebarMenuItem: {
     width: 40,
@@ -583,9 +864,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   logoutButton: {
-    marginTop: 'auto', // Push the logout button to the bottom
-    backgroundColor: '#FFF0F0', // Light red background
-    marginBottom: 20, // Add some margin at the bottom
+    marginTop: 'auto',
+    backgroundColor: '#FFF0F0',
+    marginBottom: 20,
   },
   mainContent: {
     flex: 1,
@@ -788,9 +1069,279 @@ const styles = StyleSheet.create({
     right: 16,
     top: 16,
   },
+  
+  // New mobile styles
+  mobileContainer: {
+    flex: 1,
+    backgroundColor: '#f0f4f7',
+  },
+  mobileHeader: {
+    height: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  mobileHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mobileMenuButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 5,
+  },
+  mobileWelcomeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#176BB7',
+  },
+  mobileHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mobileHeaderIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 5,
+  },
+  mobileProfileButton: {
+    marginLeft: 5,
+  },
+  mobileProfileAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#B4D4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mobileProfileInitial: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#176BB7',
+  },
+  mobileContentArea: {
+    flex: 1,
+  },
+  mobileContentContainer: {
+    padding: 15,
+    paddingBottom: 80, // Add padding for bottom nav
+  },
+  mobileSectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 15,
+    marginTop: 5,
+  },
+  mobileClassCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    flexDirection: 'row',
+  },
+  mobileClassImageContainer: {
+    width: 70,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  mobileClassImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mobileClassInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  mobileClassName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E4F91',
+    marginBottom: 4,
+  },
+  mobileClassDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  mobileNoClassesText: {
+    fontSize: 16,
+    color: '#666',
+    fontStyle: 'italic',
+    marginBottom: 15,
+  },
+  mobileActivityCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    flexDirection: 'row',
+  },
+  mobileActivityImageContainer: {
+    width: 70,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  mobileActivityImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mobileActivityInfo: {
+    flex: 1,
+  },
+  mobileActivityName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E4F91',
+    marginBottom: 4,
+  },
+  mobileActivityDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
+  },
+  mobileActivityButton: {
+    backgroundColor: '#B4D4FF',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
+  },
+  mobileActivityButtonText: {
+    color: '#1E4F91',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  mobileBottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
+  },
+  mobileNavItem: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+  },
+  mobileAddButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#176BB7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  mobileSideNav: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: '70%',
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 10,
+    zIndex: 1000,
+  },
+  mobileSideNavHeader: {
+    height: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  mobileSideNavClose: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mobileSideNavTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#176BB7',
+    marginRight: 40,
+  },
+  mobileSideNavContent: {
+    flex: 1,
+    paddingTop: 20,
+  },
+  mobileSideNavItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  mobileSideNavText: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 15,
+  },
+  mobileSideNavLogout: {
+    marginTop: 'auto',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingVertical: 20,
+  },
+  mobileSideNavLogoutText: {
+    fontSize: 16,
+    color: '#FF6B6B',
+    marginLeft: 15,
+  },
+  
+  // Improved modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -798,37 +1349,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 16,
-    width: '80%',
-    alignItems: 'flex-start',
+    width: isSmallScreen ? '90%' : '60%',
+    maxWidth: 500,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 10,
   },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#176BB7',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
   modalText: {
     fontSize: 16,
-    color: '#1E4F91',
+    color: '#333',
     textAlign: 'left',
-    marginBottom: 16,
-    fontWeight: '500',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  inputContainer: {
     width: '100%',
-  },
-  modalCloseButton: {
-    backgroundColor: '#B4D4FF',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-  },
-  modalCloseText: {
-    color: '#1E4F91',
-    fontWeight: '600',
+    marginBottom: 20,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 10,
-    padding: 10,
+    padding: 12,
     width: '100%',
     fontSize: 16,
     color: '#333',
@@ -838,6 +1390,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#176BB7',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    minWidth: '45%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  modalCancelButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  modalCancelText: {
+    color: '#333',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
 
