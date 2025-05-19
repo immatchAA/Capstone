@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   activityCard: {
-    width: '31%',
+    width: '45%',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,

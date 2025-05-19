@@ -1,12 +1,13 @@
 /* TeacherClassKeySetup.css */
 .class-key-setup-container {
-    padding: 2rem;
-    max-width: 500px;
-    margin: 2rem auto;
-    font-family: 'Poppins', sans-serif;
-    background-color: #f9fafe;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 2rem 3rem;
+  margin: 2rem 0;
+  max-width: 100%;
+  width: 100%;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f9fafe;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   }
   
   .class-key-setup-container h2 {
@@ -68,3 +69,63 @@
     font-weight: bold;
   }
   
+  .class-table-group {
+  margin-bottom: 24px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+.class-header {
+  background-color: #2980b9;
+  color: white;
+  padding: 16px 20px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.students-table th,
+.students-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+  font-size: 14px;
+}
+
+.students-table th {
+  background-color: #f7f7f7;
+  font-weight: bold;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #ff5b5b;
+  color: white;
+}
+
+.dropdown-icon {
+  font-size: 18px;
+}
