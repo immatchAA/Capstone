@@ -1,22 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AccountE.css';
-import Sidebar from './Sidebar'; // assuming Sidebar is already created
+import Sidebar from './Sidebar'; 
+import { supabase } from '../../supabaseClient'; 
 
 const AccountE = () => {
   const [showModal, setShowModal] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showEditPassword, setShowEditPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Cena',
-    email: 'CenaJohn@gmail.com',
-    phoneNumber: '1234-231-3231',
-    idNumber: '01-2345-678',
-    password: '123*************',
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: '',
+    createdAt: '',
   });
-  
+
+  // Fetch user data from Supabase
+  useEffect(() => {
+    const fetchUserData = async () => {
+      // Get the current user session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session && session.user) {
+        // Fetch user details from the "users" table
+        const { data, error } = await supabase
+          .from('users')
+          .select('first_name, last_name, email, role, created_at')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching user data:", error);
+        } else {
+          // Set the user data to state
+          setFormData({
+            firstName: data.first_name,
+            lastName: data.last_name,
+            email: data.email,
+            phoneNumber: data.phone_number,
+            role: data.role,
+            createdAt: new Date(data.created_at).toLocaleDateString(), // Format the created_at to a readable date
+          });
+        }
+      } else {
+        console.warn("No active session found.");
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   // Copy of form data for the popup to maintain original data until save
-  const [editFormData, setEditFormData] = useState({...formData});
+  const [editFormData, setEditFormData] = useState({ ...formData });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,30 +57,34 @@ const AccountE = () => {
   };
 
   const handleEditClick = () => {
-    // Reset edit form data to current data and show modal
-    setEditFormData({...formData});
+    setEditFormData({ ...formData });
     setShowModal(true);
-    // Reset password visibility when opening modal
-    setShowEditPassword(false);
   };
-  
-  const handleSave = () => {
-    // Save the edited data to the main form data
-    setFormData({...editFormData});
+
+  const handleSave = async () => {
+  const updates = {
+    first_name: editFormData.firstName,
+    last_name: editFormData.lastName,
+    email: editFormData.email,
+  };
+
+  const { error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', session.user.id)
+
+  if (error) {
+    console.error("Error updating profile:", error.message);
+    alert("Failed to update profile");
+  } else {
+    setFormData({ ...editFormData });
     setShowModal(false);
-  };
-  
+  }
+};
+
+
   const handleCancel = () => {
-    // Discard changes
     setShowModal(false);
-  };
-  
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-  
-  const toggleEditPasswordVisibility = () => {
-    setShowEditPassword(!showEditPassword);
   };
 
   return (
@@ -66,7 +103,7 @@ const AccountE = () => {
                 <div className="accounte-camera-icon">📷</div>
               </div>
               <div className="accounte-profile-name">{formData.firstName} {formData.lastName}</div>
-              <div className="accounte-profile-id">ID - {formData.idNumber}</div>
+              <div className="accounte-profile-id">{formData.role}</div> {/* Display the role here */}
             </div>
             <button className="accounte-edit-button" onClick={handleEditClick}>
               EDIT
@@ -98,18 +135,6 @@ const AccountE = () => {
                 </div>
               </div>
 
-              <div className="accounte-form-group">
-                <label>Phone Number</label>
-                <div className="accounte-input-with-badge">
-                  <input
-                    type="text"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    disabled={true}
-                  />
-                  <span className="accounte-verified-badge">✓ Verified</span>
-                </div>
-              </div>
             </div>
 
             <div className="accounte-form-column">
@@ -124,30 +149,11 @@ const AccountE = () => {
               </div>
 
               <div className="accounte-form-group">
-                <label>Password</label>
-                <div className="accounte-input-with-icon">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    disabled={true}
-                  />
-                  <button 
-                    type="button" 
-                    className="accounte-password-toggle"
-                    onClick={togglePasswordVisibility}
-                  >
-                    {showPassword ? "🔒" : "👁️"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="accounte-form-group">
-                <label>ID - Number</label>
+                <label>Joined Date</label> {/* Display Joined date */}
                 <input
                   type="text"
-                  name="idNumber"
-                  value={formData.idNumber}
+                  name="joinedDate"
+                  value={formData.createdAt}
                   disabled={true}
                 />
               </div>
@@ -155,7 +161,7 @@ const AccountE = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Popup Modal for Editing */}
       {showModal && (
         <div className="accounte-modal-overlay">
@@ -219,18 +225,11 @@ const AccountE = () => {
                     <label>Password</label>
                     <div className="accounte-input-with-icon">
                       <input
-                        type={showEditPassword ? "text" : "password"}
+                        type="password"
                         name="password"
                         value={editFormData.password}
                         onChange={handleChange}
                       />
-                      <button 
-                        type="button" 
-                        className="accounte-password-toggle"
-                        onClick={toggleEditPasswordVisibility}
-                      >
-                        {showEditPassword ? "🔒" : "👁️"}
-                      </button>
                     </div>
                   </div>
 
