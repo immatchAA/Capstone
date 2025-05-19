@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import './Authform.css';
 import backgroundImage from '../images/bgbg.png';
 import { supabase } from '../../supabaseClient';
-import bcrypt from 'bcryptjs';
 
 function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -15,38 +14,41 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     const { email, password } = formData;
-
+  
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
+  
     if (authError) {
       alert("❌ Login failed: " + authError.message);
       return;
     }
-
+  
     const userId = authData.user.id;
-
+  
     const { data: userData, error: userFetchError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .single();
-
+  
     if (userFetchError) {
       alert("❌ Could not fetch user data: " + userFetchError.message);
       return;
     }
+  
+    // Store the role and user data in localStorage
     localStorage.setItem('loggedInUser', JSON.stringify(userData));
-
+    localStorage.setItem('userRole', userData.role); // Save role in localStorage
+  
     alert("✅ Login successful!");
-    navigate('/classkey'); 
+    navigate('/dashboard');
   };
   
-  
+
   return (
     <div className="login-page background-blur" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="login-container">
