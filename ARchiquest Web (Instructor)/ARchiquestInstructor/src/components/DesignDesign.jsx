@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './DesignDesign.css';
 import { supabase } from '../../supabaseClient'; 
 import Sidebar from './Sidebar';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -24,6 +24,8 @@ function DesignDesign() {
   const [teacherId, setTeacherId] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const selectedChallenge = location.state?.challenge || null;
 
   // Get user session
   useEffect(() => {
@@ -38,8 +40,15 @@ function DesignDesign() {
       }
     };
 
+    if (selectedChallenge) {
+      setPlanName(selectedChallenge.plan_name || '');
+      setPlanDescription(selectedChallenge.description || '');
+      setBudget(selectedChallenge.budget || 0);
+      setCurrency(selectedChallenge.currency || 'PHP');
+      
+    }
     getUserSession();
-  }, [navigate]);
+  }, [navigate, selectedChallenge]);
 
   // Handle file drop
   const handleDrop = (e) => {
@@ -61,7 +70,6 @@ function DesignDesign() {
     }
   };
 
-  // Function to handle the Publish Plan button click
 const handlePublishPlan = async () => {
   if (!planName || !planDescription || !budget || !currency) {
     alert("Please fill in all the fields before submitting.");
@@ -75,8 +83,8 @@ const handlePublishPlan = async () => {
 
   setLoading(true);
 
-  let designFileUrl = '';
-  let filePath = ''; // ✅ Declare filePath outside to store it for DB
+  let designFileUrl = selectedChallenge?.design_file_url || '';
+  let filePath = selectedChallenge?.file_path || '';
 
   if (uploadedFile) {
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -86,12 +94,8 @@ const handlePublishPlan = async () => {
       return;
     }
 
-    // ✅ Step 1: Build unique file path
-    const filePath = `designs/${teacherId}/${uuidv4()}_${uploadedFile.name}`;
-    
+    filePath = `designs/${teacherId}/${uuidv4()}_${uploadedFile.name}`;
 
-
-    // ✅ Step 2: Upload to Supabase
     const { error: uploadError } = await supabase.storage
       .from('upload')
       .upload(filePath, uploadedFile, { upsert: true });
@@ -103,7 +107,6 @@ const handlePublishPlan = async () => {
       return;
     }
 
-    // ✅ Step 3: Get public URL (for optional direct file preview)
     const { data: { publicUrl }, error: urlError } = await supabase
       .storage
       .from('upload')
@@ -115,33 +118,59 @@ const handlePublishPlan = async () => {
       return;
     }
 
-    designFileUrl = publicUrl; // ✅ This is optional and not required by the mobile app
+    designFileUrl = publicUrl;
   }
 
-  // ✅ Step 4: Save record in design_plan with file_path
-  const { error: insertError } = await supabase
-    .from('design_plan')
-    .insert([{
-      teacher_id: teacherId,
-      plan_name: planName,
-      description: planDescription,
-      budget,
-      currency,
-      file_path: filePath,               // ✅ Important for mobile app
-      design_file_url: designFileUrl,    // Optional for web display
-      materials: [],
-    }]);
+  // 🛠️ UPDATE if editing
+  if (selectedChallenge) {
+    const { error: updateError } = await supabase
+      .from('design_plan')
+      .update({
+        plan_name: planName,
+        description: planDescription,
+        budget,
+        currency,
+        file_path: filePath,
+        design_file_url: designFileUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', selectedChallenge.id);
 
-  if (insertError) {
-    console.error('❌ Failed to publish design plan:', insertError);
-    alert('❌ Failed to publish the design plan!');
-    setLoading(false);
-    return;
+    if (updateError) {
+      console.error('❌ Failed to update design plan:', updateError);
+      alert('❌ Failed to update the design plan!');
+      setLoading(false);
+      return;
+    }
+
+    alert('✅ Design plan updated successfully!');
+  } else {
+    // ✨ INSERT new
+    const { error: insertError } = await supabase
+      .from('design_plan')
+      .insert([{
+        teacher_id: teacherId,
+        plan_name: planName,
+        description: planDescription,
+        budget,
+        currency,
+        file_path: filePath,
+        design_file_url: designFileUrl,
+        materials: [],
+      }]);
+
+    if (insertError) {
+      console.error('❌ Failed to publish design plan:', insertError);
+      alert('❌ Failed to publish the design plan!');
+      setLoading(false);
+      return;
+    }
+
+    alert('✅ Design plan published successfully!');
   }
 
   setLoading(false);
-  alert('✅ Design plan published successfully!');
-  // navigate('/'); // Optional: redirect after success
+  navigate('/dashboard'); // Optional: redirect back to dashboard
 };
 
 
