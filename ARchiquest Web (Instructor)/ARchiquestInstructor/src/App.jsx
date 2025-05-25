@@ -6,8 +6,10 @@ import Dashboard from './components/Dashboard';
 import VirtualStore from './components/Virtualstore';
 import Createdesignplan from './components/Createdesignplan';
 import ClassKey from './components/ClassKey';
+import ClassKeyList from './components/classKeyList';
 import AccountE from './components/AccountE';
 import DesignDesign from './components/DesignDesign';
+import StudentProgressDetail from './components/studentProgressDetail'; // Newly added import
 
 function App() {
   return (
@@ -20,7 +22,9 @@ function App() {
       <Route path="/Virtualstore" element={<VirtualStore />} /> {/* Virtual Store page */}
       <Route path="/Createdesignplan" element={<Createdesignplan />} /> {/* Create Design Plan page */}
       <Route path="/createdesign" element={<DesignDesign />} /> {/* Create Work page */}
-      <Route path="/classkey" element={<ClassKey />} />
+      <Route path="/classkey" element={<ClassKey />} /> {/* Class Key Setup page */}
+      <Route path="/student-progress" element={<ClassKeyList />} /> {/* Student Progress page */}
+      <Route path="/studentProgressDetail" element={<StudentProgressDetail />} /> {/* Student Progress Detail page */}
       <Route path="/accountE" element={<AccountE />} /> {/* Account page */}
       {/* Add more routes as needed */}
       {/* You can add other routes here later */}
