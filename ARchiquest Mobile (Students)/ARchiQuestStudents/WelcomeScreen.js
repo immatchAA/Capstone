@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
-    padding: 20,
+    padding: '2.5%',
     paddingTop: Platform.OS === 'android' ? 40 : 20,
   },
   logoContainer: {
@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     lineHeight: 24,
     maxWidth: '90%',
+    textAlign: 'justify',
   },
   subtitleContainer: {
     flexDirection: 'row',

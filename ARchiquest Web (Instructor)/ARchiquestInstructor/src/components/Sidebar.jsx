@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './Sidebar.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaHome, FaTasks, FaChartLine, FaPencilRuler, FaStore, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaHome, FaTasks, FaChartLine, FaPencilRuler, FaStore, FaSignOutAlt, FaUser, FaBook } from 'react-icons/fa';
 import { supabase } from '../../supabaseClient';
 
 function Sidebar() {
@@ -85,6 +85,10 @@ function Sidebar() {
 
         <Link to="/createdesignplan" className="custom-nav-item">
           <FaPencilRuler className="custom-icon" /> Create Design
+        </Link>
+
+        <Link to="/reading-materials" className="custom-nav-item">
+          <FaBook className="custom-icon" /> Reading Materials
         </Link>
 
         <Link to="/Virtualstore" className="custom-nav-item">
