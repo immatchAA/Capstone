@@ -22,9 +22,15 @@ function ReadingMaterials() {
 
       const promises = materialsData.map(async (material) => {
         const { data: sections, error } = await supabase
+<<<<<<< HEAD
           .from('reading_material_sections')
           .select('section_slug, content')
           .eq('reading_material_id', material.id);
+=======
+          .from('reading_materials_sections')
+          .select('section_slug, content')
+          .eq('material_id', material.id);
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
 
         if (error) {
           console.error(`Error fetching sections for material ${material.id}:`, error);
@@ -47,6 +53,7 @@ function ReadingMaterials() {
     navigate('/add-reading-material');
   };
 
+<<<<<<< HEAD
   const handleEdit = (material) => {
     navigate('/add-reading-material', {
       state: {
@@ -76,6 +83,8 @@ function ReadingMaterials() {
     }
   };
 
+=======
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
   return (
     <div className="readingmaterial-wrapper">
       <Sidebar />
@@ -92,6 +101,7 @@ function ReadingMaterials() {
 
         {materials.map((material) => (
           <div key={material.id} className="readingmaterial-section-card">
+<<<<<<< HEAD
             <div className="readingmaterial-card-header">
               <h2>{material.title}</h2>
               <div>
@@ -108,16 +118,27 @@ function ReadingMaterials() {
               </div>
             </div>
 
+=======
+            <h2>{material.title}</h2>
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
             <p style={{ fontSize: '0.85rem', color: '#888' }}>
               Created on: {new Date(material.created_at).toLocaleDateString()}
             </p>
 
+<<<<<<< HEAD
             {/* {material.sections.map((section, index) => (
+=======
+            {material.sections.map((section, index) => (
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
               <div key={index} style={{ marginTop: '1rem' }}>
                 <h4 style={{ color: '#176BB7', marginBottom: '0.3rem' }}>{section.section_slug}</h4>
                 <p style={{ whiteSpace: 'pre-line' }}>{section.content}</p>
               </div>
+<<<<<<< HEAD
             ))} */}
+=======
+            ))}
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
           </div>
         ))}
       </div>

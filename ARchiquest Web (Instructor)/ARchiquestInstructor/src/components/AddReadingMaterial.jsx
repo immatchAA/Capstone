@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+=======
+import React, { useState } from 'react';
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
 import Sidebar from './Sidebar';
 import './AddReadingMaterial.css';
 import { supabase } from '../../supabaseClient';
 
+<<<<<<< HEAD
 const slugify = (text) =>
   text
     .toString()
@@ -55,6 +60,17 @@ function AddReadingMaterial() {
     const updated = [...sections];
     updated[index][field] = value;
     setSections(updated);
+=======
+function AddReadingMaterial() {
+  const [title, setTitle] = useState('');
+  const [sections, setSections] = useState([{ section_slug: '', content: '' }]);
+  const [source, setSource] = useState('');
+
+  const handleSectionChange = (index, field, value) => {
+    const updatedSections = [...sections];
+    updatedSections[index][field] = value;
+    setSections(updatedSections);
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
   };
 
   const addSection = () => {
@@ -67,16 +83,23 @@ function AddReadingMaterial() {
     setSections(updated);
   };
 
+<<<<<<< HEAD
   const handleCancel = () => {
     if (window.confirm('Discard changes and go back?')) {
       navigate('/reading-materials');
     }
   };
 
+=======
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+<<<<<<< HEAD
+=======
+      // 🔐 Get current user session
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
 
@@ -85,6 +108,7 @@ function AddReadingMaterial() {
         return;
       }
 
+<<<<<<< HEAD
       const slug = slugify(title);
       let materialId;
 
@@ -112,6 +136,20 @@ function AddReadingMaterial() {
         materialId = materialData.id;
       }
 
+=======
+      // 1. Insert into reading_materials
+      const { data: materialData, error: materialError } = await supabase
+        .from('reading_materials')
+        .insert([{ title, user_id: user.id }])
+        .select()
+        .single();
+
+      if (materialError) throw materialError;
+
+      const materialId = materialData.id;
+
+      // 2. Insert sections into reading_material_sections
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
       const sectionData = sections.map((section) => ({
         reading_material_id: materialId,
         section_slug: section.section_slug,
@@ -124,8 +162,15 @@ function AddReadingMaterial() {
 
       if (sectionError) throw sectionError;
 
+<<<<<<< HEAD
       alert(editMaterial ? 'Reading material updated!' : 'Reading material added!');
       navigate('/reading-materials');
+=======
+      alert('Reading material added successfully!');
+      setTitle('');
+      setSections([{ section_slug: '', content: '' }]);
+      setSource('');
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
     } catch (error) {
       console.error('Submission failed:', error);
       alert(`Error: ${error.message}`);
@@ -138,8 +183,13 @@ function AddReadingMaterial() {
       <div className="readingmaterial-container">
         <div className="readingmaterial-header">
           <div>
+<<<<<<< HEAD
             <h1>{editMaterial ? 'EDIT' : 'ADD'} READING MATERIAL</h1>
             <p>{editMaterial ? 'Edit existing material' : 'Add or Create Reading Materials here.'}</p>
+=======
+            <h1>ADD READING MATERIAL</h1>
+            <p>Add or Create Reading Materials here.</p>
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
           </div>
         </div>
 
@@ -171,6 +221,7 @@ function AddReadingMaterial() {
               />
 
               {sections.length > 1 && (
+<<<<<<< HEAD
                 <div className="button-right-wrapper">
                 <button
                   type="button"
@@ -179,6 +230,11 @@ function AddReadingMaterial() {
                 >
                   Remove Section
                 </button> </div>
+=======
+                <button type="button" onClick={() => removeSection(index)} className="remove-section-btn">
+                  Remove Section
+                </button>
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
               )}
             </div>
           ))}
@@ -186,6 +242,7 @@ function AddReadingMaterial() {
           <button type="button" onClick={addSection} className="add-section-btn">
             + Add Section
           </button>
+<<<<<<< HEAD
           
           <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
             <button type="submit" className="equal-btn submit-btn">
@@ -195,6 +252,18 @@ function AddReadingMaterial() {
               Cancel
             </button>
           </div>
+=======
+
+          <label htmlFor="source">Source (optional)</label>
+          <input
+            id="source"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            placeholder="e.g. https://example.com"
+          />
+
+          <button type="submit" className="submit-btn">Add</button>
+>>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
         </form>
       </div>
     </div>
