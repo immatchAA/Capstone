@@ -77,7 +77,6 @@
   transition: background-color 0.3s ease;
 }
 
-<<<<<<< HEAD
 .button-right-wrapper {
   display: flex;
   justify-content: flex-end;
@@ -85,8 +84,6 @@
 }
 
 
-=======
->>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
 .add-section-btn {
   background-color: #176BB7;
   color: white;
@@ -110,15 +107,11 @@
 .submit-btn {
   background-color: #176BB7;
   color: white;
-<<<<<<< HEAD
   margin-top: 10px;
-=======
->>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
 }
 
 .submit-btn:hover {
   background-color: #145a99;
-<<<<<<< HEAD
 }
 
 .equal-btn {
@@ -126,6 +119,3 @@
   padding: 8px;
   text-align: center;
 }
-=======
-}
->>>>>>> b0fd167e9f7e10701798e30150c21c1a8a13fca7
