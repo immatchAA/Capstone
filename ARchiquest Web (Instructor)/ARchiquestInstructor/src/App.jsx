@@ -8,6 +8,8 @@ import Createdesignplan from './components/Createdesignplan';
 import ClassKey from './components/ClassKey';
 import AccountE from './components/AccountE';
 import DesignDesign from './components/DesignDesign';
+import AddReadingMaterial from './components/AddReadingMaterial';
+import ReadingMaterials from './components/ReadingMaterials';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
       <Route path="/createdesign" element={<DesignDesign />} /> {/* Create Work page */}
       <Route path="/classkey" element={<ClassKey />} />
       <Route path="/accountE" element={<AccountE />} /> {/* Account page */}
+      <Route path="/reading-materials" element={<ReadingMaterials />} />
+      <Route path="/add-reading-material" element={<AddReadingMaterial />} />
       {/* Add more routes as needed */}
       {/* You can add other routes here later */}
     </Routes>
