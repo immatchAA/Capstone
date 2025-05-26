@@ -1,0 +1,666 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+/* Color Variables */
+:root {
+  --primary-dark: #176b87;
+  --primary-medium: #86b6f6;
+  --primary-light: #b4d4ff;
+  --primary-lighter: #eef5ff;
+  --background-light: #f0f4f7;
+}
+
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+}
+
+.landing-container {
+  height: 100vh;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-medium), var(--primary-light));
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: 20px;
+}
+
+.landing-content {
+  z-index: 10;
+  max-width: 800px;
+}
+
+.landing-title {
+  font-size: 4rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  animation: pulse 2s infinite;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.landing-subtitle {
+  font-size: 1.3rem;
+  max-width: 700px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.6;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.landing-buttons {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.landing-btn {
+  padding: 10px 35px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.landing-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.landing-btn.dark {
+  background-color: var(--primary-dark);
+  color: white;
+}
+
+.landing-btn.light {
+  background-color: var(--primary-lighter);
+  color: var(--primary-dark);
+}
+
+/* Animated House */
+.animated-house {
+  position: absolute;
+  top: 80px;
+  left: 60px;
+  animation: bounce-slow 4s infinite ease-in-out;
+}
+
+.house-container {
+  position: relative;
+}
+
+.house-base {
+  width: 80px;
+  height: 60px;
+  background-color: var(--primary-lighter);
+  position: relative;
+  border: 2px solid var(--primary-dark);
+  border-radius: 5px;
+}
+
+.house-roof {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 50px solid transparent;
+  border-right: 50px solid transparent;
+  border-bottom: 30px solid var(--primary-medium);
+}
+
+.house-door {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 25px;
+  background-color: var(--primary-dark);
+  border-radius: 8px 8px 0 0;
+}
+
+.house-window {
+  position: absolute;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary-dark);
+}
+
+.left-window {
+  left: 8px;
+}
+
+.right-window {
+  right: 8px;
+}
+
+.house-chimney {
+  position: absolute;
+  top: -20px;
+  right: 8px;
+  width: 8px;
+  height: 20px;
+  background-color: var(--primary-dark);
+}
+
+.smoke {
+  position: absolute;
+  background-color: var(--primary-lighter);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.smoke1 {
+  top: -35px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  animation: smoke-rise 2s infinite ease-out;
+}
+
+.smoke2 {
+  top: -45px;
+  right: 8px;
+  width: 4px;
+  height: 4px;
+  animation: smoke-rise 2s infinite ease-out 0.5s;
+}
+
+.smoke3 {
+  top: -55px;
+  right: 10px;
+  width: 3px;
+  height: 3px;
+  animation: smoke-rise 2s infinite ease-out 1s;
+}
+
+/* Cartoon People */
+.cartoon-person {
+  position: absolute;
+  font-size: 3rem;
+  z-index: 5;
+}
+
+.person1 {
+  bottom: 60px;
+  right: 80px;
+  animation: walk 4s infinite ease-in-out;
+}
+
+.person2 {
+  top: 120px;
+  right: 120px;
+  animation: wave 3s infinite ease-in-out;
+}
+
+.person3 {
+  bottom: 100px;
+  left: 200px;
+  animation: bounce-slow 3s infinite ease-in-out 1s;
+}
+
+.person-placeholder {
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Floating Shapes */
+.animated-elements {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.shape {
+  position: absolute;
+  opacity: 0.6;
+}
+
+/* Individual shape styles */
+.cube {
+  width: 30px;
+  height: 30px;
+  background-color: var(--primary-medium);
+  transform: rotate(45deg);
+}
+
+.triangle {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 30px solid var(--primary-light);
+}
+
+.circle {
+  border-radius: 50%;
+  background-color: var(--primary-lighter);
+}
+
+.square {
+  background-color: var(--primary-medium);
+}
+
+.rectangle {
+  background-color: var(--primary-light);
+  border-radius: 15px;
+}
+
+.building-block {
+  background: linear-gradient(135deg, var(--primary-medium), var(--primary-dark));
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Shape positioning and animations */
+.shape1 {
+  left: 10%;
+  top: 20%;
+  width: 25px;
+  height: 25px;
+  animation: float 4s infinite ease-in-out;
+}
+.shape2 {
+  left: 75%;
+  top: 30%;
+  animation: float-delayed 5s infinite ease-in-out;
+}
+.shape3 {
+  right: 20%;
+  bottom: 25%;
+  width: 20px;
+  height: 20px;
+  animation: float-slow 6s infinite ease-in-out;
+}
+.shape4 {
+  left: 20%;
+  top: 60%;
+  width: 15px;
+  height: 15px;
+  animation: spin-slow 8s infinite linear;
+}
+.shape5 {
+  right: 30%;
+  top: 15%;
+  width: 20px;
+  height: 20px;
+  animation: pulse 3s infinite;
+}
+.shape6 {
+  left: 60%;
+  bottom: 40%;
+  width: 30px;
+  height: 10px;
+  animation: float 5s infinite ease-in-out;
+}
+.shape7 {
+  right: 10%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  animation: bounce 2s infinite;
+}
+.shape8 {
+  left: 80%;
+  bottom: 60%;
+  width: 22px;
+  height: 22px;
+  animation: float-delayed 4s infinite ease-in-out;
+}
+.shape9 {
+  left: 40%;
+  top: 10%;
+  animation: pulse 4s infinite;
+}
+.shape10 {
+  right: 50%;
+  bottom: 15%;
+  width: 25px;
+  height: 8px;
+  animation: float-slow 7s infinite ease-in-out;
+}
+.shape11 {
+  left: 15%;
+  bottom: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin-slow 6s infinite linear;
+}
+.shape12 {
+  right: 25%;
+  top: 40%;
+  width: 24px;
+  height: 24px;
+  animation: float 3s infinite ease-in-out;
+}
+.shape13 {
+  left: 70%;
+  top: 70%;
+  animation: float-delayed 6s infinite ease-in-out;
+}
+.shape14 {
+  right: 40%;
+  top: 25%;
+  width: 28px;
+  height: 6px;
+  animation: pulse 5s infinite;
+}
+.shape15 {
+  left: 50%;
+  bottom: 30%;
+  width: 20px;
+  height: 20px;
+  animation: bounce 3s infinite;
+}
+
+.block1 {
+  left: 30%;
+  top: 80%;
+  width: 15px;
+  height: 15px;
+  animation: float 4s infinite ease-in-out;
+}
+.block2 {
+  right: 60%;
+  bottom: 70%;
+  width: 12px;
+  height: 12px;
+  animation: float-slow 5s infinite ease-in-out;
+}
+.block3 {
+  left: 90%;
+  top: 35%;
+  width: 18px;
+  height: 18px;
+  animation: pulse 3s infinite;
+}
+.block4 {
+  left: 5%;
+  bottom: 35%;
+  width: 20px;
+  height: 20px;
+  animation: float-delayed 6s infinite ease-in-out;
+}
+.block5 {
+  right: 15%;
+  top: 65%;
+  width: 14px;
+  height: 14px;
+  animation: spin-slow 7s infinite linear;
+}
+
+/* Stars and sparkles */
+.sparkle {
+  position: absolute;
+  font-size: 1.5rem;
+  color: var(--primary-lighter);
+  opacity: 0.8;
+}
+
+.star1 {
+  left: 25%;
+  top: 40%;
+  animation: twinkle 2s infinite ease-in-out;
+}
+.star2 {
+  right: 15%;
+  bottom: 45%;
+  animation: twinkle 2s infinite ease-in-out 0.5s;
+}
+.star3 {
+  left: 85%;
+  top: 60%;
+  animation: twinkle 2s infinite ease-in-out 1s;
+}
+.star4 {
+  left: 5%;
+  bottom: 35%;
+  animation: twinkle 2s infinite ease-in-out 0.7s;
+}
+.star5 {
+  right: 35%;
+  top: 20%;
+  animation: twinkle 2s infinite ease-in-out 1.5s;
+}
+.star6 {
+  left: 65%;
+  bottom: 20%;
+  animation: twinkle 2s infinite ease-in-out 0.3s;
+}
+
+/* Floating clouds */
+.cloud {
+  position: absolute;
+  opacity: 0.3;
+}
+
+.cloud1 {
+  top: 40px;
+  left: 100px;
+  animation: drift 20s infinite linear;
+}
+
+.cloud2 {
+  top: 80px;
+  right: 150px;
+  animation: drift-reverse 25s infinite linear;
+}
+
+.cloud-main {
+  width: 60px;
+  height: 20px;
+  background-color: var(--primary-lighter);
+  border-radius: 20px;
+  position: relative;
+}
+
+.cloud-puff1 {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  width: 25px;
+  height: 25px;
+  background-color: var(--primary-lighter);
+  border-radius: 50%;
+}
+
+.cloud-puff2 {
+  position: absolute;
+  top: -6px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  background-color: var(--primary-lighter);
+  border-radius: 50%;
+}
+
+/* Animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+@keyframes float-delayed {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-30px) rotate(-5deg);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes walk {
+  0%,
+  100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(15px);
+  }
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(15deg);
+  }
+  75% {
+    transform: rotate(-15deg);
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translateX(0px);
+  }
+  100% {
+    transform: translateX(30px);
+  }
+}
+
+@keyframes drift-reverse {
+  0% {
+    transform: translateX(0px);
+  }
+  100% {
+    transform: translateX(-25px);
+  }
+}
+
+@keyframes smoke-rise {
+  0% {
+    transform: translateY(0px);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .landing-title {
+    font-size: 2.5rem;
+  }
+
+  .landing-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .landing-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .animated-house {
+    top: 40px;
+    left: 20px;
+    transform: scale(0.8);
+  }
+
+  .cartoon-person {
+    font-size: 2rem;
+  }
+
+  .shape {
+    transform: scale(0.8);
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-title {
+    font-size: 2rem;
+  }
+
+  .landing-subtitle {
+    font-size: 1rem;
+    padding: 0 10px;
+  }
+
+  .animated-house {
+    transform: scale(0.6);
+  }
+
+  .cartoon-person {
+    font-size: 1.5rem;
+  }
+}

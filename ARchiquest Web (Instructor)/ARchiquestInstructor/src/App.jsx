@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
+import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
@@ -15,7 +16,7 @@ function App() {
   return (
     <Routes>
       {/* Define Routes */}
-      <Route path="/" element={<Home />} /> {/* Home page */}
+      <Route path="/" element={<LandingPage />} /> {/* Home page */}
       <Route path="/login" element={<Login />} /> {/* Login page */}
       <Route path="/register" element={<Register />} /> {/* Register page */}
       <Route path="/dashboard" element={<Dashboard />} /> {/* Dashboard page */}
