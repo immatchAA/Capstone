@@ -13,13 +13,12 @@ import {
   ActivityIndicator,
   Dimensions,
   StatusBar,
-  Animated
+  Animated,
+  useWindowDimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../supabaseClient';
-
-const { width, height } = Dimensions.get('window');
 
 const FloatingLabelInput = ({
   label,
@@ -34,6 +33,7 @@ const FloatingLabelInput = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const { fontScale } = useWindowDimensions();
 
   useEffect(() => {
     Animated.timing(labelAnim, {
@@ -52,7 +52,7 @@ const FloatingLabelInput = ({
     }),
     fontSize: labelAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [16, 12],
+      outputRange: [16 / fontScale, 12 / fontScale],
     }),
     color: labelAnim.interpolate({
       inputRange: [0, 1],
@@ -92,6 +92,7 @@ const UserRegister = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { width, height, fontScale } = useWindowDimensions();
 
   const [errors, setErrors] = useState({
     firstName: '',
@@ -221,6 +222,45 @@ const UserRegister = ({ navigation }) => {
     }
   };
 
+  // Calculate responsive sizes
+  const getResponsiveSize = (size) => {
+    return size / fontScale;
+  };
+
+  const responsiveStyles = {
+    title: {
+      fontSize: getResponsiveSize(28),
+    },
+    subtitle: {
+      fontSize: getResponsiveSize(16),
+    },
+    inputField: {
+      fontSize: getResponsiveSize(16),
+    },
+    errorText: {
+      fontSize: getResponsiveSize(14),
+    },
+    passwordRequirement: {
+      fontSize: getResponsiveSize(13),
+    },
+    registerButtonText: {
+      fontSize: getResponsiveSize(18),
+    },
+    signInText: {
+      fontSize: getResponsiveSize(16),
+    },
+    signInButtonText: {
+      fontSize: getResponsiveSize(16),
+    },
+    footerText: {
+      fontSize: getResponsiveSize(12),
+    },
+  };
+
+  // Calculate padding based on screen size
+  const horizontalPadding = width < 350 ? 12 : 20;
+  const verticalPadding = height < 600 ? 15 : 20;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EEF5FF" />
@@ -234,25 +274,31 @@ const UserRegister = ({ navigation }) => {
           style={styles.keyboardAvoidingView}
         >
           <ScrollView 
-            contentContainerStyle={styles.scrollContainer}
+            contentContainerStyle={[
+              styles.scrollContainer,
+              { 
+                paddingHorizontal: horizontalPadding,
+                paddingTop: Platform.OS === 'android' ? 40 : verticalPadding 
+              }
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
             <TouchableOpacity 
-              style={styles.backButton}
+              style={[styles.backButton, { top: Platform.OS === 'android' ? 40 : verticalPadding }]}
               onPress={() => navigation.goBack()}
             >
               <Ionicons name="arrow-back" size={24} color="#176B87" />
             </TouchableOpacity>
             
-            <View style={styles.headerContainer}>
+            <View style={[styles.headerContainer, { marginTop: height * 0.06 }]}>
               {/* <Image
                 source={require('../assets/logo.png')}
-                style={styles.logo}
+                style={[styles.logo, { width: width * 0.18, height: width * 0.18 }]}
                 resizeMode="contain"
               /> */}
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Join ARchiQuest to explore architecture</Text>
+              <Text style={[styles.title, responsiveStyles.title]}>Create Account</Text>
+              <Text style={[styles.subtitle, responsiveStyles.subtitle]}>Join ARchiQuest to explore architecture</Text>
             </View>
             
             <View style={styles.formContainer}>
@@ -267,7 +313,7 @@ const UserRegister = ({ navigation }) => {
                 autoCapitalize="words"
                 icon={<Ionicons name="person-outline" size={20} color="#176B87" />}
               />
-              {errors.firstName ? <Text style={styles.errorText}>{errors.firstName}</Text> : null}
+              {errors.firstName ? <Text style={[styles.errorText, responsiveStyles.errorText]}>{errors.firstName}</Text> : null}
 
               <FloatingLabelInput
                 label="Last Name"
@@ -280,7 +326,7 @@ const UserRegister = ({ navigation }) => {
                 autoCapitalize="words"
                 icon={<Ionicons name="person-outline" size={20} color="#176B87" />}
               />
-              {errors.lastName ? <Text style={styles.errorText}>{errors.lastName}</Text> : null}
+              {errors.lastName ? <Text style={[styles.errorText, responsiveStyles.errorText]}>{errors.lastName}</Text> : null}
 
               <FloatingLabelInput
                 label="Email"
@@ -293,7 +339,7 @@ const UserRegister = ({ navigation }) => {
                 error={errors.email}
                 icon={<Ionicons name="mail-outline" size={20} color="#176B87" />}
               />
-              {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+              {errors.email ? <Text style={[styles.errorText, responsiveStyles.errorText]}>{errors.email}</Text> : null}
 
               <FloatingLabelInput
                 label="Password"
@@ -315,7 +361,7 @@ const UserRegister = ({ navigation }) => {
                   </TouchableOpacity>
                 }
               />
-              {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+              {errors.password ? <Text style={[styles.errorText, responsiveStyles.errorText]}>{errors.password}</Text> : null}
 
               <FloatingLabelInput
                 label="Confirm Password"
@@ -337,14 +383,15 @@ const UserRegister = ({ navigation }) => {
                   </TouchableOpacity>
                 }
               />
-              {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
+              {errors.confirmPassword ? <Text style={[styles.errorText, responsiveStyles.errorText]}>{errors.confirmPassword}</Text> : null}
 
               {password && !errors.password && (
                 <View style={styles.passwordStrengthContainer}>
-                  <Text style={styles.passwordStrengthText}>Password requirements:</Text>
+                  <Text style={[styles.passwordStrengthText, { fontSize: getResponsiveSize(14) }]}>Password requirements:</Text>
                   <View style={styles.passwordRequirements}>
                     <Text style={[
                       styles.passwordRequirement, 
+                      responsiveStyles.passwordRequirement,
                       password.length >= 8 ? styles.passwordRequirementMet : null
                     ]}>
                       <Ionicons 
@@ -355,6 +402,7 @@ const UserRegister = ({ navigation }) => {
                     </Text>
                     <Text style={[
                       styles.passwordRequirement, 
+                      responsiveStyles.passwordRequirement,
                       /[A-Z]/.test(password) ? styles.passwordRequirementMet : null
                     ]}>
                       <Ionicons 
@@ -365,6 +413,7 @@ const UserRegister = ({ navigation }) => {
                     </Text>
                     <Text style={[
                       styles.passwordRequirement, 
+                      responsiveStyles.passwordRequirement,
                       /[a-z]/.test(password) ? styles.passwordRequirementMet : null
                     ]}>
                       <Ionicons 
@@ -375,6 +424,7 @@ const UserRegister = ({ navigation }) => {
                     </Text>
                     <Text style={[
                       styles.passwordRequirement, 
+                      responsiveStyles.passwordRequirement,
                       /\d/.test(password) ? styles.passwordRequirementMet : null
                     ]}>
                       <Ionicons 
@@ -385,6 +435,7 @@ const UserRegister = ({ navigation }) => {
                     </Text>
                     <Text style={[
                       styles.passwordRequirement, 
+                      responsiveStyles.passwordRequirement,
                       /[@$!%*?&#]/.test(password) ? styles.passwordRequirementMet : null
                     ]}>
                       <Ionicons 
@@ -398,7 +449,10 @@ const UserRegister = ({ navigation }) => {
               )}
 
               <TouchableOpacity 
-                style={styles.registerButton} 
+                style={[
+                  styles.registerButton,
+                  { paddingVertical: height < 600 ? 12 : 15 }
+                ]} 
                 onPress={handleSignUp}
                 disabled={isLoading}
               >
@@ -407,30 +461,33 @@ const UserRegister = ({ navigation }) => {
                 ) : (
                   <>
                     <Ionicons name="person-add-outline" size={20} color="#fff" style={styles.buttonIcon} />
-                    <Text style={styles.registerButtonText}>Create Account</Text>
+                    <Text style={[styles.registerButtonText, responsiveStyles.registerButtonText]}>Create Account</Text>
                   </>
                 )}
               </TouchableOpacity>
 
-              <View style={styles.dividerContainer}>
+              <View style={[styles.dividerContainer, { marginVertical: height < 600 ? 15 : 25 }]}>
                 <View style={styles.divider} />
                 <Text style={styles.dividerText}>OR</Text>
                 <View style={styles.divider} />
               </View>
 
               <View style={styles.signInContainer}>
-                <Text style={styles.signInText}>Already have an account?</Text>
+                <Text style={[styles.signInText, responsiveStyles.signInText]}>Already have an account?</Text>
                 <TouchableOpacity 
                   onPress={() => navigation.navigate('UserLogin')}
-                  style={styles.signInButton}
+                  style={[
+                    styles.signInButton,
+                    { paddingVertical: height < 600 ? 10 : 12 }
+                  ]}
                 >
-                  <Text style={styles.signInButtonText}>Sign In</Text>
+                  <Text style={[styles.signInButtonText, responsiveStyles.signInButtonText]}>Sign In</Text>
                 </TouchableOpacity>
               </View>
             </View>
             
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
+            <View style={[styles.footer, { marginTop: height < 600 ? 20 : 30 }]}>
+              <Text style={[styles.footerText, responsiveStyles.footerText]}>
                 By creating an account, you agree to our Terms of Service and Privacy Policy
               </Text>
             </View>
@@ -453,34 +510,26 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: 20,
-    paddingTop: Platform.OS === 'android' ? 40 : 20,
   },
   backButton: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 40 : 20,
     left: 20,
     zIndex: 10,
     padding: 8,
   },
   headerContainer: {
     alignItems: 'center',
-    marginTop: height * 0.08,
-    marginBottom: height * 0.02,
+    marginBottom: 20,
   },
   logo: {
-    width: width * 0.2,
-    height: width * 0.2,
     marginBottom: 10,
   },
   title: { 
-    fontSize: 28, 
     fontWeight: 'bold', 
     color: '#176B87',
     marginBottom: 8,
   },
   subtitle: { 
-    fontSize: 16, 
     color: '#555', 
     textAlign: 'center',
     maxWidth: '80%',
@@ -511,7 +560,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   inputField: {
-    fontSize: 16,
     color: '#333',
     padding: 0,
     paddingRight: 30,
@@ -532,7 +580,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#FF6B6B',
-    fontSize: 14,
     marginTop: -15,
     marginBottom: 15,
     marginLeft: 5,
@@ -544,7 +591,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   passwordStrengthText: {
-    fontSize: 14,
     fontWeight: '500',
     color: '#176B87',
     marginBottom: 8,
@@ -553,7 +599,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   passwordRequirement: {
-    fontSize: 13,
     color: '#666',
     marginBottom: 4,
   },
@@ -562,7 +607,6 @@ const styles = StyleSheet.create({
   },
   registerButton: { 
     backgroundColor: '#176B87', 
-    paddingVertical: 15, 
     borderRadius: 12, 
     alignItems: 'center',
     justifyContent: 'center',
@@ -576,7 +620,6 @@ const styles = StyleSheet.create({
   },
   registerButtonText: { 
     color: '#fff', 
-    fontSize: 18, 
     fontWeight: '600',
   },
   buttonIcon: {
@@ -585,7 +628,6 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 25,
   },
   divider: {
     flex: 1,
@@ -601,7 +643,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signInText: {
-    fontSize: 16,
     color: '#555',
     marginBottom: 12,
   },
@@ -609,22 +650,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#176B87',
     borderRadius: 12,
-    paddingVertical: 12,
     paddingHorizontal: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
   signInButtonText: {
     color: '#176B87',
-    fontSize: 16,
     fontWeight: '600',
   },
   footer: {
-    marginTop: 30,
     alignItems: 'center',
   },
   footerText: {
     color: '#666',
-    fontSize: 12,
     textAlign: 'center',
   },
 });

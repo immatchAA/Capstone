@@ -27,6 +27,9 @@ import DesignPlanDetails from './DesignPlan/DesignPlanDetails';
 import DesignProgressScreen from './DesignPlan/DesignProgressScreen';
 import DesignPlanViewer from './DesignPlan/DesignPlanViewer';
 
+//Student Scoring System
+
+
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -63,6 +66,9 @@ export default function App() {
         <Stack.Screen name='RenewableEnergySystems' component={RenewableEnergySystems} />
         <Stack.Screen name='FireSafety' component={FireSafety} />
         <Stack.Screen name='UrbanPlanningFundamentals' component={UrbanPlanningFundamentals} />
+
+        
+
       </Stack.Navigator>
     </NavigationContainer>
   );
