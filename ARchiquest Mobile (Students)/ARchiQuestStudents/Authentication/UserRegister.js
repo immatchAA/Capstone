@@ -56,11 +56,12 @@ const FloatingLabelInput = ({
     }),
     color: labelAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: ['#666', '#176B87'],
+      outputRange: ['#176B87', '#176B87'],
     }),
-    backgroundColor: '#fff',
-    paddingHorizontal: 4,
-    zIndex: 1,
+    backgroundColor: labelAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['#fff', 'transparent'],
+    }),
   };
 
   return (

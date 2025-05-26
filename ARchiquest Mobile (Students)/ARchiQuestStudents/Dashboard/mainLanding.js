@@ -1,20 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Modal, 
-  ScrollView, 
-  Animated, 
-  Dimensions, 
-  Image, 
-  Alert,
-  SafeAreaView,
-  Platform,
-  StatusBar
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, 
+  Animated, Dimensions, Image, Alert, SafeAreaView, Platform, StatusBar
+  } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../supabaseClient';
@@ -39,9 +26,7 @@ const MainLanding = () => {
   const slideAnim = useRef(new Animated.Value(screenWidth)).current;
 
   useEffect(() => {
-    // Fetch student name from Supabase
     fetchStudentName();
-    // Fetch active classes
     fetchActiveClasses();
   }, []);
 
@@ -173,7 +158,7 @@ const MainLanding = () => {
       alert("✅ Successfully joined the class!");
       setIsJoinModalVisible(false);
       setClassKey('');
-      fetchActiveClasses(); // Refresh the class list
+      fetchActiveClasses();
     } catch (err) {
       alert("An error occurred: " + err.message);
     }
@@ -277,11 +262,12 @@ const MainLanding = () => {
         {/* Mobile Header */}
         <View style={styles.mobileHeader}>
           <View style={styles.mobileHeaderLeft}>
-            <TouchableOpacity 
-              style={styles.mobileMenuButton}
-              onPress={() => setIsSideNavVisible(true)}
-            >
-              <Ionicons name="menu-outline" size={24} color="#176BB7" />
+            <TouchableOpacity style={styles.mobileProfileButton}>
+              <View style={styles.mobileProfileAvatar}>
+                <Text style={styles.mobileProfileInitial}>
+                  {studentName ? studentName[0] : 'S'}
+                </Text>
+              </View>
             </TouchableOpacity>
             <Text style={styles.mobileWelcomeText}>
               Welcome, {studentName || 'Student'}
@@ -292,15 +278,16 @@ const MainLanding = () => {
             <TouchableOpacity style={styles.mobileHeaderIcon}>
               <Ionicons name="call-outline" size={20} color="#176BB7" />
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.mobileHeaderIcon}>
               <Ionicons name="notifications-outline" size={20} color="#176BB7" />
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.mobileProfileButton}>
-              <View style={styles.mobileProfileAvatar}>
-                <Text style={styles.mobileProfileInitial}>{studentName ? studentName[0] : 'S'}</Text>
-              </View>
+
+            <TouchableOpacity 
+              style={styles.mobileMenuButton}
+              onPress={() => setIsSideNavVisible(true)}
+            >
+              <Ionicons name="menu-outline" size={24} color="#176BB7" />
             </TouchableOpacity>
           </View>
         </View>
@@ -412,15 +399,39 @@ const MainLanding = () => {
           </TouchableOpacity>
         </View>
         
-        {/* Mobile Side Navigation */}
-        <Animated.View 
-          style={[
-            styles.mobileSideNav,
-            { transform: [{ translateX: slideAnim }] }
+    {/* Mobile Side Navigation */}
+{isSideNavVisible && (
+  <View
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 999,
+    }}
+  >
+    {/* Backdrop */}
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={() => setIsSideNavVisible(false)}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+      }}
+    />
+
+    {/* Side Nav Panel */}
+        <Animated.View style={[ styles.mobileSideNav,
+            { transform: [{ translateX: slideAnim }] },
           ]}
         >
           <View style={styles.mobileSideNavHeader}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.mobileSideNavClose}
               onPress={() => setIsSideNavVisible(false)}
             >
@@ -428,32 +439,27 @@ const MainLanding = () => {
             </TouchableOpacity>
             <Text style={styles.mobileSideNavTitle}>ARchiQuest</Text>
           </View>
-          
+
           <View style={styles.mobileSideNavContent}>
-            <TouchableOpacity style={styles.mobileSideNavItem}>
-              <Ionicons name="home" size={24} color="#176BB7" />
-              <Text style={styles.mobileSideNavText}>Home</Text>
-            </TouchableOpacity>
-            
             <TouchableOpacity style={styles.mobileSideNavItem}>
               <Ionicons name="person" size={24} color="#176BB7" />
               <Text style={styles.mobileSideNavText}>Profile</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.mobileSideNavItem}
               onPress={() => navigation.navigate('ReadingMaterials')}
             >
               <Ionicons name="book" size={24} color="#176BB7" />
               <Text style={styles.mobileSideNavText}>Reading Materials</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.mobileSideNavItem}>
               <Ionicons name="settings" size={24} color="#176BB7" />
               <Text style={styles.mobileSideNavText}>Settings</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.mobileSideNavItem, styles.mobileSideNavLogout]}
               onPress={handleLogout}
             >
@@ -462,7 +468,9 @@ const MainLanding = () => {
             </TouchableOpacity>
           </View>
         </Animated.View>
-        
+      </View>
+    )}
+
         {/* Mobile Join Class Modal */}
         <Modal
           transparent={true}
@@ -1016,7 +1024,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   activityCard: {
-    width: '31%',
+    width: '45%',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
@@ -1114,7 +1122,8 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   mobileProfileButton: {
-    marginLeft: 5,
+    marginLeft: '2.5%',
+    marginRight: '5%',
   },
   mobileProfileAvatar: {
     width: 36,
@@ -1281,7 +1290,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
-    width: '70%',
+    width: '55%',
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: -2, height: 0 },

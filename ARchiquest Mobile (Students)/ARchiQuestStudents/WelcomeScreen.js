@@ -256,6 +256,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     lineHeight: 24,
     maxWidth: '90%',
+    textAlign: 'justify',
   },
   subtitleContainer: {
     flexDirection: 'row',
