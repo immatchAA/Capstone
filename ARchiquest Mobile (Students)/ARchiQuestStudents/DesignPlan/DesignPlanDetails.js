@@ -13,9 +13,10 @@ import {
   Linking,
   Alert,
   FlatList,
-  TextInput,
   Modal,
   Animated,
+  Dimensions,
+  TextInput,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { supabase } from "../supabaseClient"
@@ -121,6 +122,9 @@ const DesignPlanDetails = ({ route, navigation }) => {
   const [currentProgress, setCurrentProgress] = useState(0)
   const [savingProgress, setSavingProgress] = useState(false)
   const [userId, setUserId] = useState(null)
+
+  const [isFeedbackModalVisible, setIsFeedbackModalVisible] = useState(false)
+  const [feedbackData, setFeedbackData] = useState(null)
 
   // Define the steps for the design plan
   const progressSteps = [
@@ -620,16 +624,27 @@ const DesignPlanDetails = ({ route, navigation }) => {
         return
       }
 
+      // Calculate score based on various factors
+      const scoreData = calculateDesignScore(
+        totalEstimatedCost,
+        planDetails?.budget || 300000,
+        planDetails || {},
+        selectedMaterials,
+      )
+
       // Create estimate record
       const { data: estimate, error: estimateError } = await supabase
         .from("cost_estimates")
         .insert({
           name: estimateName,
-          design_plan_id: planDetails.id,
+          design_plan_id: planDetails?.id,
           student_id: user.id,
           total_cost: totalEstimatedCost,
-          status: "draft",
+          status: "completed", // Changed from "draft" to "completed"
           class_id: classId,
+          score: scoreData.overallScore, // Add the score
+           // Add score breakdown
+          // completed_at field removed as it doesn't exist in the database
         })
         .select()
         .single()
@@ -656,13 +671,36 @@ const DesignPlanDetails = ({ route, navigation }) => {
         console.error("Error saving estimate items:", itemsError)
         Alert.alert("Warning", `Estimate saved but items failed: ${itemsError.message}`)
       } else {
-        Alert.alert("Success", "Your cost estimate has been saved successfully!", [
-          { text: "OK", onPress: () => setIsEstimateModalVisible(false) },
-        ])
+        // Update progress to final step
+        updateProgress(progressSteps.length - 1)
 
-        // Update progress to materials step if not already there
-        if (currentProgress < 1) {
-          updateProgress(1)
+        // Generate educational feedback
+        const feedback = generateEducationalFeedback(scoreData)
+
+        // Complete the design plan
+        const completionResult = completeDesignPlan(scoreData)
+
+        // Show completion dialog with score
+        showCompletionDialog(scoreData, feedback, completionResult.recommendations)
+
+        setIsEstimateModalVisible(false)
+
+        // Update the design plan status in the database
+        try {
+          const { error: updateError } = await supabase
+            .from("student_progress")
+            .update({
+              is_completed: true,
+              completed_at: new Date().toISOString(),
+            })
+            .eq("student_id", userId)
+            .eq("id", planDetails.id)
+
+          if (updateError) {
+            console.error("Error updating design plan status:", updateError)
+          }
+        } catch (err) {
+          console.error("Exception updating design plan status:", err)
         }
       }
     } catch (err) {
@@ -671,6 +709,259 @@ const DesignPlanDetails = ({ route, navigation }) => {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  // Calculate design score based on multiple architectural factors
+  const calculateDesignScore = (totalCost, budget, plan, materials) => {
+    // Use default values if parameters are null
+    budget = budget || 300000
+    plan = plan || {}
+    materials = materials || []
+
+    // Initialize score categories
+    const scoreData = {
+      overallScore: 0,
+      categories: {
+        budgetManagement: {
+          score: 0,
+          maxScore: 30,
+          description: "Budget utilization and cost control",
+        },
+        materialSelection: {
+          score: 0,
+          maxScore: 25,
+          description: "Appropriate material choices and quantities",
+        },
+        costEfficiency: {
+          score: 0,
+          maxScore: 25,
+          description: "Cost per square meter efficiency",
+        },
+        sustainability: {
+          score: 0,
+          maxScore: 20,
+          description: "Use of sustainable materials and practices",
+        },
+      },
+    }
+
+    // 1. Budget Management Score (30 points)
+    const budgetRatio = totalCost / budget
+    if (budgetRatio <= 0.85) {
+      // Well under budget (excellent)
+      scoreData.categories.budgetManagement.score = 30
+    } else if (budgetRatio <= 0.95) {
+      // Slightly under budget (very good)
+      scoreData.categories.budgetManagement.score = 25
+    } else if (budgetRatio <= 1.0) {
+      // At budget (good)
+      scoreData.categories.budgetManagement.score = 20
+    } else if (budgetRatio <= 1.1) {
+      // Slightly over budget (acceptable)
+      scoreData.categories.budgetManagement.score = 15
+    } else if (budgetRatio <= 1.2) {
+      // Moderately over budget (poor)
+      scoreData.categories.budgetManagement.score = 10
+    } else {
+      // Significantly over budget (very poor)
+      scoreData.categories.budgetManagement.score = 5
+    }
+
+    // 2. Material Selection Score (25 points)
+    // Check if essential materials are included
+    const essentialMaterials = ["cement", "steel", "sand", "gravel", "wood", "tile", "paint"]
+    const selectedMaterialNames = materials.map((m) => m.material_name.toLowerCase())
+
+    let essentialCount = 0
+    essentialMaterials.forEach((material) => {
+      if (selectedMaterialNames.some((name) => name.includes(material))) {
+        essentialCount++
+      }
+    })
+
+    const essentialRatio = essentialCount / essentialMaterials.length
+    scoreData.categories.materialSelection.score = Math.round(essentialRatio * 25)
+
+    // 3. Cost Efficiency Score (25 points)
+    // Calculate cost per square meter and compare to industry standards
+    const costPerSqm = totalCost / (plan.floor_area || floorArea || 100)
+
+    // Industry standards (simplified for this example)
+    // These would typically vary by region and building type
+    const lowCostStandard = 15000 // PHP per sqm
+    const highCostStandard = 30000 // PHP per sqm
+
+    if (costPerSqm <= lowCostStandard) {
+      // Very efficient
+      scoreData.categories.costEfficiency.score = 25
+    } else if (costPerSqm <= (lowCostStandard + highCostStandard) / 2) {
+      // Moderately efficient
+      scoreData.categories.costEfficiency.score = 20
+    } else if (costPerSqm <= highCostStandard) {
+      // Standard efficiency
+      scoreData.categories.costEfficiency.score = 15
+    } else if (costPerSqm <= highCostStandard * 1.2) {
+      // Somewhat inefficient
+      scoreData.categories.costEfficiency.score = 10
+    } else {
+      // Very inefficient
+      scoreData.categories.costEfficiency.score = 5
+    }
+
+    // 4. Sustainability Score (20 points)
+    // Check for sustainable materials
+    const sustainableMaterials = ["bamboo", "recycled", "sustainable", "eco", "green"]
+    let sustainableCount = 0
+
+    selectedMaterialNames.forEach((name) => {
+      if (sustainableMaterials.some((sustainable) => name.includes(sustainable))) {
+        sustainableCount++
+      }
+    })
+
+    // Award points based on percentage of sustainable materials
+    const sustainableRatio = sustainableCount / (materials.length || 1)
+    scoreData.categories.sustainability.score = Math.min(20, Math.round(sustainableRatio * 40))
+
+    // Calculate overall score
+    scoreData.overallScore = Object.values(scoreData.categories).reduce((total, category) => total + category.score, 0)
+
+    return scoreData
+  }
+
+  // Generate educational feedback based on score
+  const generateEducationalFeedback = (scoreData) => {
+    const feedback = []
+
+    // Budget Management Feedback
+    if (scoreData.categories.budgetManagement.score >= 25) {
+      feedback.push("Excellent budget management! Your cost estimation demonstrates strong financial planning skills.")
+    } else if (scoreData.categories.budgetManagement.score >= 15) {
+      feedback.push("Acceptable budget management. Consider reviewing high-cost items to optimize your budget further.")
+    } else {
+      feedback.push(
+        "Your project is significantly over budget. In professional practice, this would require redesign or client approval for additional funding.",
+      )
+    }
+
+    // Material Selection Feedback
+    if (scoreData.categories.materialSelection.score >= 20) {
+      feedback.push("Your material selection is comprehensive and appropriate for this type of construction.")
+    } else if (scoreData.categories.materialSelection.score >= 10) {
+      feedback.push(
+        "Some essential materials may be missing or underrepresented in your estimate. Review structural and finishing requirements.",
+      )
+    } else {
+      feedback.push(
+        "Your material selection needs significant improvement. Many essential components are missing from your estimate.",
+      )
+    }
+
+    // Cost Efficiency Feedback
+    if (scoreData.categories.costEfficiency.score >= 20) {
+      feedback.push("Your cost per square meter is highly efficient, demonstrating good value engineering principles.")
+    } else if (scoreData.categories.costEfficiency.score >= 10) {
+      feedback.push("Your cost per square meter is within acceptable ranges but could be optimized further.")
+    } else {
+      feedback.push(
+        "Your cost per square meter is high compared to industry standards. Consider alternative materials or construction methods.",
+      )
+    }
+
+    // Sustainability Feedback
+    if (scoreData.categories.sustainability.score >= 15) {
+      feedback.push(
+        "Excellent incorporation of sustainable materials! This would qualify for green building certifications.",
+      )
+    } else if (scoreData.categories.sustainability.score >= 8) {
+      feedback.push(
+        "Some sustainable materials are included, but there's room to improve the environmental impact of your design.",
+      )
+    } else {
+      feedback.push(
+        "Consider incorporating more sustainable materials to reduce environmental impact and potentially reduce long-term costs.",
+      )
+    }
+
+    // Add educational context
+    feedback.push(
+      "In professional practice, architects typically aim for a 5-10% contingency buffer below the maximum budget.",
+    )
+    feedback.push(
+      "Material costs typically represent 60-70% of total construction costs, with labor making up most of the remainder.",
+    )
+
+    return feedback
+  }
+
+  // Complete the design plan and generate recommendations
+  const completeDesignPlan = (scoreData) => {
+    const recommendations = []
+
+    // Generate recommendations based on scores
+    if (scoreData.categories.budgetManagement.score < 20) {
+      recommendations.push("Review high-cost materials and consider alternatives or quantity reductions.")
+    }
+
+    if (scoreData.categories.materialSelection.score < 20) {
+      recommendations.push(
+        "Ensure all essential building components are included in your estimate (foundation, structure, roofing, finishes, etc).",
+      )
+    }
+
+    if (scoreData.categories.costEfficiency.score < 20) {
+      recommendations.push(
+        "Consider value engineering techniques to optimize cost per square meter without sacrificing quality.",
+      )
+    }
+
+    if (scoreData.categories.sustainability.score < 15) {
+      recommendations.push("Research locally available sustainable materials that could replace conventional options.")
+    }
+
+    // Add general educational recommendations
+    recommendations.push("Compare your estimate with similar projects to benchmark your cost estimation accuracy.")
+    recommendations.push(
+      "Consider life-cycle costs, not just initial construction costs, for a more comprehensive analysis.",
+    )
+
+    return {
+      completed: true,
+      recommendations,
+    }
+  }
+
+  // Show completion dialog with score and feedback
+  const showCompletionDialog = (scoreData, feedback, recommendations) => {
+    // Create a formatted message for the alert
+    const scoreMessage = `Your Design Plan Score: ${scoreData.overallScore}/100\n\n`
+
+    const breakdownMessage = Object.entries(scoreData.categories)
+      .map(([key, data]) => `${data.description}: ${data.score}/${data.maxScore}`)
+      .join("\n")
+
+    // Show the completion alert
+    Alert.alert("Design Plan Completed!", `${scoreMessage}${breakdownMessage}`, [
+      {
+        text: "View Detailed Feedback",
+        onPress: () => showDetailedFeedback(scoreData, feedback, recommendations),
+      },
+      {
+        text: "OK",
+        style: "default",
+      },
+    ])
+  }
+
+  // Show detailed feedback in a modal
+  const showDetailedFeedback = (scoreData, feedback, recommendations) => {
+    // Create a state for the feedback modal
+    setFeedbackData({
+      score: scoreData,
+      feedback,
+      recommendations,
+    })
+    setIsFeedbackModalVisible(true)
   }
 
   // Get budget status
@@ -698,87 +989,162 @@ const DesignPlanDetails = ({ route, navigation }) => {
     }
   }
 
-  // Find alternative materials (cheaper options)
-  const findAlternatives = (material) => {
-    // Group materials by similar names or categories
-    const similarMaterials = materials.filter(
-      (m) =>
-        m.id !== material.id &&
-        (m.material_name.toLowerCase().includes(material.material_name.toLowerCase().split(" ")[0]) ||
-          material.material_name.toLowerCase().includes(m.material_name.toLowerCase().split(" ")[0])),
-    )
-
-    // Sort by price
-    return similarMaterials.sort((a, b) => a.price - b.price)
-  }
-
   // Generate optimization tips
   const generateOptimizationTips = () => {
-    const budget = planDetails?.budget || 300000
     const tips = []
 
-    // If over budget, suggest alternatives
-    if (totalEstimatedCost > budget) {
-      // Find the most expensive materials
-      const expensiveMaterials = [...selectedMaterials]
-        .sort((a, b) => b.price * b.quantity - a.price * a.quantity)
-        .slice(0, 3)
-
-      expensiveMaterials.forEach((material) => {
-        const alternatives = findAlternatives(material)
-        if (alternatives.length > 0) {
-          const cheapestAlt = alternatives[0]
-          const savings = (material.price - cheapestAlt.price) * material.quantity
-
-          if (savings > 0) {
-            tips.push({
-              type: "alternative",
-              material: material,
-              alternative: cheapestAlt,
-              savings: savings,
-            })
-          }
-        }
+    if (totalEstimatedCost > (planDetails?.budget || 300000) * 1.05) {
+      tips.push({
+        title: "Reduce Material Quantities",
+        description: "Review your material quantities and look for opportunities to reduce waste or use less material.",
+        savings: "5-10%",
       })
     }
 
-    // Check for quantity optimization
-    selectedMaterials.forEach((material) => {
-      // For area-based materials, check if there's waste
-      if (
-        (material.unit.toLowerCase().includes("sqm") || material.unit.toLowerCase().includes("sq.m")) &&
-        material.quantity > floorArea * 1.1
-      ) {
-        tips.push({
-          type: "quantity",
-          material: material,
-          suggestedQuantity: Math.ceil(floorArea * 1.05), // 5% waste allowance
-          savings: material.price * (material.quantity - Math.ceil(floorArea * 1.05)),
-        })
-      }
-    })
+    if (selectedMaterials.length > 5 && totalEstimatedCost > (planDetails?.budget || 300000) * 0.8) {
+      tips.push({
+        title: "Consider Alternative Materials",
+        description:
+          "Explore less expensive but equally effective materials. Research local suppliers for better deals.",
+        savings: "10-15%",
+      })
+    }
+
+    if (planDetails?.floor_area && totalEstimatedCost / planDetails.floor_area > 25000) {
+      tips.push({
+        title: "Optimize Space Usage",
+        description:
+          "Re-evaluate the design to minimize the floor area without compromising functionality. Smaller spaces require fewer materials.",
+        savings: "8-12%",
+      })
+    }
 
     return tips
   }
 
-  // Render a single material item
+  // Calculate remaining budget and percentage
+  const budget = planDetails?.budget || 300000
+  const currency = planDetails?.currency || "PHP"
+  const remaining = budget - totalEstimatedCost
+  const spentPercentage = (totalEstimatedCost / budget) * 100
+  const budgetStatus = getBudgetStatus()
+  const optimizationTips = generateOptimizationTips()
+
+  // Render optimization tip item
+  const renderOptimizationTip = (tip, index) => (
+    <View key={index} style={styles.tipItem}>
+      <Ionicons name="bulb-outline" size={24} color="#FFB347" />
+      <View style={styles.tipContent}>
+        <Text style={styles.tipTitle}>{tip.title}</Text>
+        <Text style={styles.tipDescription}>{tip.description}</Text>
+        <Text style={styles.tipSavings}>Potential Savings: {tip.savings}</Text>
+      </View>
+    </View>
+  )
+
+  // Feedback Modal
+  const renderFeedbackModal = () => (
+    <Modal
+      visible={isFeedbackModalVisible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setIsFeedbackModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { maxHeight: height * 0.8 }]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Design Plan Assessment</Text>
+            <TouchableOpacity onPress={() => setIsFeedbackModalVisible(false)} style={styles.modalCloseButton}>
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={{ flex: 1 }}>
+            {feedbackData && (
+              <>
+                <View style={styles.scoreSection}>
+                  <Text style={styles.scoreSectionTitle}>Overall Score</Text>
+                  <View style={styles.scoreCircle}>
+                    <Text style={styles.scoreValue}>{feedbackData.score.overallScore}</Text>
+                    <Text style={styles.scoreMax}>/100</Text>
+                  </View>
+                </View>
+
+                <View style={styles.scoreBreakdownSection}>
+                  <Text style={styles.scoreSectionTitle}>Score Breakdown</Text>
+                  {Object.entries(feedbackData.score.categories).map(([key, data], index) => (
+                    <View key={index} style={styles.scoreBreakdownItem}>
+                      <View style={styles.scoreBreakdownHeader}>
+                        <Text style={styles.scoreBreakdownTitle}>{data.description}</Text>
+                        <Text style={styles.scoreBreakdownValue}>
+                          {data.score}/{data.maxScore}
+                        </Text>
+                      </View>
+                      <View style={styles.scoreProgressContainer}>
+                        <View
+                          style={[
+                            styles.scoreProgress,
+                            { width: `${(data.score / data.maxScore) * 100}%` },
+                            data.score / data.maxScore < 0.4
+                              ? styles.scoreProgressLow
+                              : data.score / data.maxScore < 0.7
+                                ? styles.scoreProgressMedium
+                                : styles.scoreProgressHigh,
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.feedbackSection}>
+                  <Text style={styles.scoreSectionTitle}>Educational Feedback</Text>
+                  {feedbackData.feedback.map((item, index) => (
+                    <View key={index} style={styles.feedbackItem}>
+                      <Ionicons name="school-outline" size={20} color="#176BB7" />
+                      <Text style={styles.feedbackText}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.recommendationsSection}>
+                  <Text style={styles.scoreSectionTitle}>Recommendations</Text>
+                  {feedbackData.recommendations.map((item, index) => (
+                    <View key={index} style={styles.recommendationItem}>
+                      <Ionicons name="bulb-outline" size={20} color="#FFB347" />
+                      <Text style={styles.recommendationText}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+          </ScrollView>
+
+          <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsFeedbackModalVisible(false)}>
+            <Text style={styles.closeModalButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+
+  const { height } = Dimensions.get("window")
+
+  // Render material item
   const renderMaterialItem = ({ item, index }) => (
     <View style={[styles.materialItem, item.isSelected && styles.selectedMaterialItem]}>
       <View style={styles.materialHeader}>
         <TouchableOpacity style={styles.materialSelectButton} onPress={() => handleSelectMaterial(item, index)}>
           <Ionicons
-            name={item.isSelected ? "checkbox" : "square-outline"}
+            name={item.isSelected ? "checkbox-outline" : "square-outline"}
             size={24}
             color={item.isSelected ? "#176BB7" : "#666"}
           />
           <Text style={styles.materialName}>{item.material_name}</Text>
         </TouchableOpacity>
-        <Text style={styles.materialPrice}>
-          {formatCurrency(item.price, planDetails?.currency)} / {item.unit}
-        </Text>
+        <Text style={styles.materialPrice}>{formatCurrency(item.price, currency)}</Text>
       </View>
-
-      {item.description && <Text style={styles.materialDescription}>{item.description}</Text>}
+      <Text style={styles.materialDescription}>{item.description}</Text>
 
       {item.isSelected && (
         <View style={styles.quantityContainer}>
@@ -787,22 +1153,19 @@ const DesignPlanDetails = ({ route, navigation }) => {
             <TouchableOpacity
               style={styles.quantityButton}
               onPress={() => {
-                if (item.quantity > 1) {
+                if (item.quantity > 0) {
                   handleQuantityChange((item.quantity - 1).toString(), index)
                 }
               }}
             >
               <Ionicons name="remove" size={20} color="#176BB7" />
             </TouchableOpacity>
-
             <TextInput
               style={styles.quantityInput}
+              keyboardType="numeric"
               value={item.quantity.toString()}
               onChangeText={(text) => handleQuantityChange(text, index)}
-              keyboardType="numeric"
-              selectTextOnFocus
             />
-
             <TouchableOpacity
               style={styles.quantityButton}
               onPress={() => handleQuantityChange((item.quantity + 1).toString(), index)}
@@ -810,72 +1173,19 @@ const DesignPlanDetails = ({ route, navigation }) => {
               <Ionicons name="add" size={20} color="#176BB7" />
             </TouchableOpacity>
           </View>
-
-          <Text style={styles.itemTotal}>
-            Total: {formatCurrency(item.price * item.quantity, planDetails?.currency)}
-          </Text>
+          <Text style={styles.itemTotal}>Item Total: {formatCurrency(item.price * item.quantity, currency)}</Text>
         </View>
       )}
 
       <View style={styles.materialFooter}>
         <Text style={styles.materialUnit}>Unit: {item.unit}</Text>
-        {!item.isSelected && (
-          <TouchableOpacity style={styles.addButton} onPress={() => handleSelectMaterial(item, index)}>
-            <Ionicons name="add-circle-outline" size={20} color="#176BB7" />
-            <Text style={styles.addButtonText}>Add to Estimate</Text>
-          </TouchableOpacity>
-        )}
       </View>
     </View>
   )
 
-  // Render optimization tip
-  const renderOptimizationTip = (tip, index) => {
-    if (tip.type === "alternative") {
-      return (
-        <View key={index} style={styles.tipItem}>
-          <Ionicons name="swap-horizontal" size={24} color="#FFB347" />
-          <View style={styles.tipContent}>
-            <Text style={styles.tipTitle}>Consider a cheaper alternative</Text>
-            <Text style={styles.tipDescription}>
-              Replace "{tip.material.material_name}" ({formatCurrency(tip.material.price, planDetails?.currency)}/
-              {tip.material.unit}) with "{tip.alternative.material_name}" (
-              {formatCurrency(tip.alternative.price, planDetails?.currency)}/{tip.alternative.unit})
-            </Text>
-            <Text style={styles.tipSavings}>
-              Potential savings: {formatCurrency(tip.savings, planDetails?.currency)}
-            </Text>
-          </View>
-        </View>
-      )
-    } else if (tip.type === "quantity") {
-      return (
-        <View key={index} style={styles.tipItem}>
-          <Ionicons name="resize" size={24} color="#4CAF50" />
-          <View style={styles.tipContent}>
-            <Text style={styles.tipTitle}>Optimize quantity</Text>
-            <Text style={styles.tipDescription}>
-              Reduce "{tip.material.material_name}" from {tip.material.quantity} to {tip.suggestedQuantity}{" "}
-              {tip.material.unit}
-            </Text>
-            <Text style={styles.tipSavings}>
-              Potential savings: {formatCurrency(tip.savings, planDetails?.currency)}
-            </Text>
-          </View>
-        </View>
-      )
-    }
-    return null
-  }
-
-  // Save Estimate Modal
+  // Render save estimate modal
   const renderSaveEstimateModal = () => (
-    <Modal
-      visible={isEstimateModalVisible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={() => setIsEstimateModalVisible(false)}
-    >
+    <Modal visible={isEstimateModalVisible} transparent={true} animationType="slide">
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
@@ -884,40 +1194,24 @@ const DesignPlanDetails = ({ route, navigation }) => {
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
-
-          <Text style={styles.modalSubtitle}>Give your estimate a name to save it for future reference</Text>
+          <Text style={styles.modalSubtitle}>Give this estimate a name to save it for later</Text>
 
           <TextInput
             style={styles.estimateNameInput}
-            placeholder="Estimate Name (e.g. First Floor Materials)"
+            placeholder="Estimate Name"
             value={estimateName}
             onChangeText={setEstimateName}
-            autoFocus
           />
 
           <View style={styles.estimateSummary}>
-            <Text style={styles.estimateSummaryTitle}>Summary</Text>
+            <Text style={styles.estimateSummaryTitle}>Estimate Summary</Text>
             <View style={styles.estimateSummaryRow}>
-              <Text style={styles.estimateSummaryLabel}>Materials:</Text>
-              <Text style={styles.estimateSummaryValue}>{selectedMaterials.length} items</Text>
+              <Text style={styles.estimateSummaryLabel}>Total Materials:</Text>
+              <Text style={styles.estimateSummaryValue}>{selectedMaterials.length}</Text>
             </View>
             <View style={styles.estimateSummaryRow}>
-              <Text style={styles.estimateSummaryLabel}>Total Cost:</Text>
-              <Text style={styles.estimateSummaryValue}>
-                {formatCurrency(totalEstimatedCost, planDetails?.currency)}
-              </Text>
-            </View>
-            <View style={styles.estimateSummaryRow}>
-              <Text style={styles.estimateSummaryLabel}>Budget:</Text>
-              <Text style={styles.estimateSummaryValue}>
-                {formatCurrency(planDetails?.budget || 0, planDetails?.currency)}
-              </Text>
-            </View>
-            <View style={styles.estimateSummaryRow}>
-              <Text style={styles.estimateSummaryLabel}>Status:</Text>
-              <Text style={[styles.estimateSummaryValue, { color: getBudgetStatus().color }]}>
-                {getBudgetStatus().message}
-              </Text>
+              <Text style={styles.estimateSummaryLabel}>Total Estimated Cost:</Text>
+              <Text style={styles.estimateSummaryValue}>{formatCurrency(totalEstimatedCost, currency)}</Text>
             </View>
           </View>
 
@@ -926,56 +1220,12 @@ const DesignPlanDetails = ({ route, navigation }) => {
             onPress={saveEstimate}
             disabled={isSaving}
           >
-            {isSaving ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveEstimateButtonText}>Save Estimate</Text>
-            )}
+            <Text style={styles.saveEstimateButtonText}>{isSaving ? "Saving..." : "Save Estimate"}</Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
   )
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#176BB7" />
-      </View>
-    )
-  }
-
-  if (error || !planDetails) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Error</Text>
-        </View>
-
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
-          <Text style={styles.errorText}>{error || "Failed to load design plan"}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => (route.params?.planId ? fetchPlanDetails(route.params.planId) : handleGoBack())}
-          >
-            <Text style={styles.retryButtonText}>{route.params?.planId ? "Retry" : "Go Back"}</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    )
-  }
-
-  // Calculate remaining budget and percentage
-  const budget = planDetails.budget || 300000
-  const currency = planDetails.currency || "PHP"
-  const remaining = budget - totalEstimatedCost
-  const spentPercentage = (totalEstimatedCost / budget) * 100
-  const budgetStatus = getBudgetStatus()
-  const optimizationTips = generateOptimizationTips()
 
   return (
     <SafeAreaView style={styles.container}>
@@ -991,9 +1241,11 @@ const DesignPlanDetails = ({ route, navigation }) => {
         <View style={styles.content}>
           {/* Plan Name and Description */}
           <View style={styles.planHeader}>
-            <Text style={styles.planName}>{planDetails.title || planDetails.plan_name || "Untitled Design Plan"}</Text>
+            <Text style={styles.planName}>
+              {planDetails?.title || planDetails?.plan_name || "Untitled Design Plan"}
+            </Text>
             <Text style={styles.planDescription}>
-              {planDetails.description || "No description available for this design plan."}
+              {planDetails?.description || "No description available for this design plan."}
             </Text>
 
             {floorArea > 0 && (
@@ -1141,7 +1393,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
                 <TouchableOpacity
                   style={styles.retryMaterialsButton}
                   onPress={() => {
-                    if (planDetails.teacher_id) {
+                    if (planDetails?.teacher_id) {
                       fetchMaterials(planDetails.teacher_id)
                     } else {
                       fetchTeacherIdFromClass(classId)
@@ -1246,6 +1498,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
         onRequestClose={() => setIsImageModalVisible(false)}
         swipeToCloseEnabled={true}
       />
+      {renderFeedbackModal()}
     </SafeAreaView>
   )
 }
@@ -2003,6 +2256,123 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#176BB7",
     marginLeft: 8,
+  },
+
+  // Feedback modal styles
+  scoreSection: {
+    alignItems: "center",
+    marginBottom: 20,
+    paddingVertical: 16,
+    backgroundColor: "#F0F7FF",
+    borderRadius: 8,
+  },
+  scoreSectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1E4F91",
+    marginBottom: 12,
+  },
+  scoreCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#176BB7",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  scoreValue: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  scoreMax: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    opacity: 0.8,
+  },
+  scoreBreakdownSection: {
+    marginBottom: 20,
+  },
+  scoreBreakdownItem: {
+    marginBottom: 12,
+  },
+  scoreBreakdownHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  scoreBreakdownTitle: {
+    fontSize: 14,
+    color: "#333",
+  },
+  scoreBreakdownValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#176BB7",
+  },
+  scoreProgressContainer: {
+    height: 8,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  scoreProgress: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  scoreProgressLow: {
+    backgroundColor: "#FF6B6B",
+  },
+  scoreProgressMedium: {
+    backgroundColor: "#FFB347",
+  },
+  scoreProgressHigh: {
+    backgroundColor: "#4CAF50",
+  },
+  feedbackSection: {
+    marginBottom: 20,
+  },
+  feedbackItem: {
+    flexDirection: "row",
+    backgroundColor: "#F8FAFF",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  feedbackText: {
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+    marginLeft: 12,
+  },
+  recommendationsSection: {
+    marginBottom: 20,
+  },
+  recommendationItem: {
+    flexDirection: "row",
+    backgroundColor: "#FFF8E1",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  recommendationText: {
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+    marginLeft: 12,
+  },
+  closeModalButton: {
+    backgroundColor: "#176BB7",
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  closeModalButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 16,
   },
 })
 

@@ -9,7 +9,12 @@ import ClassKey from './components/ClassKey';
 import ClassKeyList from './components/classKeyList';
 import AccountE from './components/AccountE';
 import DesignDesign from './components/DesignDesign';
+
 import StudentProgressDetail from './components/studentProgressDetail'; // Newly added import
+
+import AddReadingMaterial from './components/AddReadingMaterial';
+import ReadingMaterials from './components/ReadingMaterials';
+
 
 function App() {
   return (
@@ -26,6 +31,8 @@ function App() {
       <Route path="/student-progress" element={<ClassKeyList />} /> {/* Student Progress page */}
       <Route path="/studentProgressDetail" element={<StudentProgressDetail />} /> {/* Student Progress Detail page */}
       <Route path="/accountE" element={<AccountE />} /> {/* Account page */}
+      <Route path="/reading-materials" element={<ReadingMaterials />} />
+      <Route path="/add-reading-material" element={<AddReadingMaterial />} />
       {/* Add more routes as needed */}
       {/* You can add other routes here later */}
     </Routes>
