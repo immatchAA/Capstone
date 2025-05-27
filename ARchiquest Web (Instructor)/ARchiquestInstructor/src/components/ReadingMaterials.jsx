@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import { formatDistanceToNow } from 'date-fns';
 import Sidebar from './Sidebar';
 import './ReadingMaterials.css';
 
@@ -109,15 +110,16 @@ function ReadingMaterials() {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: '#888' }}>
-              Created on: {new Date(material.created_at).toLocaleDateString()}
-            </p>
-
-            {/* {material.sections.map((section, index) => (
-              <div key={index} style={{ marginTop: '1rem' }}>
-                <h4 style={{ color: '#176BB7', marginBottom: '0.3rem' }}>{section.section_slug}</h4>
-                <p style={{ whiteSpace: 'pre-line' }}>{section.content}</p>
-              </div>
-            ))} */}
+            {material.updated_at
+              ? `Updated on: ${new Date(material.updated_at).toLocaleString(undefined, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })} (${formatDistanceToNow(new Date(material.updated_at), { addSuffix: true })})`
+              : `Created on: ${new Date(material.created_at).toLocaleString(undefined, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })} (${formatDistanceToNow(new Date(material.created_at), { addSuffix: true })})`}
+          </p>
           </div>
         ))}
       </div>

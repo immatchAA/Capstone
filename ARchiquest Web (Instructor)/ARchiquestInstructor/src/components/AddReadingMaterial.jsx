@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import './AddReadingMaterial.css';
 import { supabase } from '../../supabaseClient';
+import ReactMarkdown from 'react-markdown';
 
 const slugify = (text) =>
   text
@@ -20,6 +21,7 @@ function AddReadingMaterial() {
 
   const [title, setTitle] = useState('');
   const [sections, setSections] = useState([{ section_slug: '', content: '' }]);
+  const [showPreview, setShowPreview] = useState(true);
 
   useEffect(() => {
     const loadMaterialData = async () => {
@@ -91,8 +93,9 @@ function AddReadingMaterial() {
       if (editMaterial) {
         const { error: updateError } = await supabase
           .from('reading_materials')
-          .update({ title, slug })
+          .update({ title, slug, updated_at: new Date().toISOString() })
           .eq('id', editMaterial.id);
+
 
         if (updateError) throw updateError;
         materialId = editMaterial.id;
@@ -152,7 +155,24 @@ function AddReadingMaterial() {
             required
           />
 
-          <h3>Sections</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>Sections</h3>
+            <button
+              type="button"
+              onClick={() => setShowPreview(!showPreview)}
+              style={{
+                backgroundColor: '#145a99',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                cursor: 'pointer',
+              }}
+            >
+              {showPreview ? 'Hide Preview' : 'Show Preview'}
+            </button>
+          </div>
+
           {sections.map((section, index) => (
             <div key={index} className="readingmaterial-section-card">
               <label>Section Slug</label>
@@ -163,22 +183,45 @@ function AddReadingMaterial() {
                 required
               />
 
-              <label>Content</label>
+              <label className="content-label">
+                Content <span className="tooltip-trigger">?</span>
+                <div className="markdown-tooltip">
+                  <h4>Markdown Guide</h4>
+                  <ul>
+                    <li><code>**bold text**</code> → <strong>bold text</strong></li>
+                    <li><code>*italic text*</code> → <em>italic text</em></li>
+                    <li><code>- List item</code> → bullet point</li>
+                    <li><code>[Link Text](https://example.com)</code> → clickable link</li>
+                    <li><code>**Subheading**</code> → bolded block title</li>
+                  </ul>
+                </div>
+              </label>
+
               <textarea
                 value={section.content}
                 onChange={(e) => handleSectionChange(index, 'content', e.target.value)}
                 required
               />
 
+              {showPreview && (
+                <>
+                  <label className="preview-label">Live Preview</label>
+                  <div className="preview-box">
+                    <ReactMarkdown>{section.content}</ReactMarkdown>
+                  </div>
+                </>
+              )}
+
               {sections.length > 1 && (
                 <div className="button-right-wrapper">
-                <button
-                  type="button"
-                  onClick={() => removeSection(index)}
-                  className="remove-section-btn"
-                >
-                  Remove Section
-                </button> </div>
+                  <button
+                    type="button"
+                    onClick={() => removeSection(index)}
+                    className="remove-section-btn"
+                  >
+                    Remove Section
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -186,7 +229,7 @@ function AddReadingMaterial() {
           <button type="button" onClick={addSection} className="add-section-btn">
             + Add Section
           </button>
-          
+
           <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
             <button type="submit" className="equal-btn submit-btn">
               {editMaterial ? 'Update' : 'Add'}
@@ -196,6 +239,7 @@ function AddReadingMaterial() {
             </button>
           </div>
         </form>
+
       </div>
     </div>
   );
