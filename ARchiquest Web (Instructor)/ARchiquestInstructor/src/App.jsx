@@ -16,7 +16,7 @@ import StudentProgressDetail from './components/studentProgressDetail'; // Newly
 import AddReadingMaterial from './components/AddReadingMaterial';
 import ReadingMaterials from './components/ReadingMaterials';
 
-
+import DesignPlanDetails from './components/DesignPlanDetails';
 function App() {
   return (
     <Routes>
@@ -34,6 +34,9 @@ function App() {
       <Route path="/accountE" element={<AccountE />} /> {/* Account page */}
       <Route path="/reading-materials" element={<ReadingMaterials />} />
       <Route path="/add-reading-material" element={<AddReadingMaterial />} />
+
+      
+      <Route path="/createdesign/:id" element={<DesignPlanDetails />} />
       {/* Add more routes as needed */}
       {/* You can add other routes here later */}
     </Routes>

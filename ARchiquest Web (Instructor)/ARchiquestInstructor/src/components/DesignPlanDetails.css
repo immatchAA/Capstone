@@ -1,0 +1,12 @@
+.design-details-wrapper {
+  display: flex;
+}
+
+.design-details-content {
+  padding: 20px;
+  flex-grow: 1;
+}
+
+.design-details-content h1 {
+  margin-bottom: 10px;
+}

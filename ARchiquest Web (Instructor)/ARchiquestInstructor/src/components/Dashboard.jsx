@@ -58,7 +58,7 @@ function Dashboard() {
             </div>
             <div className="card">
               <h2>{challenges.length}</h2>
-              <p>Total Challenges Created</p>
+              <p>Total Design Plans Created</p>
             </div>
             <div className="card">
               <h2>85%</h2>
@@ -73,9 +73,9 @@ function Dashboard() {
           {/* 📋 Challenges Table */}
          <div className="dashboard-row">
         <div className="long-card">
-          <h3>Challenges Created</h3>
+          <h3>Design Plans Created</h3>
           {challenges.length === 0 ? (
-            <p>No challenges created yet.</p>
+            <p>No Design Plans created yet.</p>
           ) : (
             <table className="challenge-table">
               <thead>
