@@ -17,11 +17,11 @@ const LandingPage = () => {
     <div className="landing-container">
       {/* Main Content */}
       <div className="landing-content">
+      <h2 className="landing-title">Welcome to</h2>
         <h1 className="landing-title">ARchiQuest</h1>
-        <p className="landing-subtitle">
-          An interactive AR platform that enhances architectural learning through immersive simulations and real-world
-          building challenges.
-        </p>
+          <p className="landing-subtitle">
+            A platform for instructors to create architectural design challenges, track student performance, and manage immersive learning experiences in real time.
+          </p>
 
         <div className="landing-buttons">
           <button onClick={handleLogin} className="landing-btn dark">

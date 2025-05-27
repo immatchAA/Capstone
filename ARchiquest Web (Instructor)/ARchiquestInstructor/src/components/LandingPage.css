@@ -1,6 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-/* Color Variables */
 :root {
   --primary-dark: #176b87;
   --primary-medium: #86b6f6;
@@ -33,11 +32,37 @@ body {
 }
 
 .landing-title {
-  font-size: 4rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
-  animation: pulse 2s infinite;
+  animation: pulseColor 2s infinite;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  transition: color 0.3s ease-in-out;
+}
+
+@keyframes pulseColor {
+  0% {
+    transform: scale(1);
+    color: white;
+    text-shadow: 0 0 12px rgba(23, 107, 135, 0.6);
+  }
+  50% {
+    transform: scale(1.08);
+    color: #176B87;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.595);
+  }
+  100% {
+    transform: scale(1);
+    color: white;
+    text-shadow: 0 0 12px rgba(23, 107, 135, 0.6);
+  }
+}
+
+h1 {
+  font-size: 5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  margin-bottom: 1.5rem;
 }
 
 .landing-subtitle {
@@ -81,7 +106,6 @@ body {
   color: var(--primary-dark);
 }
 
-/* Animated House */
 .animated-house {
   position: absolute;
   top: 80px;

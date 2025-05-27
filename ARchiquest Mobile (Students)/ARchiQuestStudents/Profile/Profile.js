@@ -1,249 +1,354 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Alert, ScrollView } from 'react-native';
-import { supabase } from '../supabaseClient'; // Import Supabase client
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, ActivityIndicator,
+  TouchableOpacity, TextInput, Modal, Image, Alert
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for camera icon
+import { supabase } from '../supabaseClient';
+import { Ionicons } from '@expo/vector-icons';
 
-const Profile = () => {
-  const [user, setUser] = useState(null); // State to store user data
+const Profile = ({ navigation }) => {
+  const [userInfo, setUserInfo] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [savedMaterials, setSavedMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newFullName, setNewFullName] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [profileImage, setProfileImage] = useState(null);
-  const [bio, setBio] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [editedName, setEditedName] = useState('');
+  const [editedLastName, setEditedLastName] = useState('');
+  const [editedEmail, setEditedEmail] = useState('');
 
-  // Fetch user profile data when the component mounts
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      const { data, error } = await supabase.auth.getUser();
-
-      if (error) {
-        console.error('Error fetching user:', error.message);
-        return;
-      }
-
-      setUser(data?.user || null);
-      setNewFullName(data?.user_metadata?.full_name || '');
-      setNewEmail(data?.email || '');
-      setBio(data?.user_metadata?.bio || '');
-      setLoading(false);
-    };
-
-    fetchUserProfile();
+    fetchProfileData();
   }, []);
 
-  // Handle profile image picking
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const fetchProfileData = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (permissionResult.granted === false) {
-      alert('Permission to access camera roll is required!');
-      return;
+    if (user) {
+      const { data: userDetails } = await supabase
+        .from('users')
+        .select('first_name, last_name, email, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      setUserInfo(userDetails);
+      setEditedName(userDetails?.first_name || '');
+      setEditedLastName(userDetails?.last_name || '');
+
+
+      const { data: designPlans } = await supabase
+        .from('design_plan')
+        .select('plan_name')
+        .eq('student_id', user.id);
+
+      const { data: saved } = await supabase
+        .from('saved_reading_materials')
+        .select('title')
+        .eq('user_id', user.id);
+
+      setUserInfo(userDetails);
+      setEditedName(userDetails?.first_name || '');
+      setEditedEmail(userDetails?.email || '');
+      setAvatarUrl(userDetails?.avatar_url || '');
+      setSubmissions(designPlans || []);
+      setSavedMaterials(saved || []);
     }
+    setLoading(false);
+  };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+  const handleSaveProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!result.cancelled) {
-      setProfileImage(result.uri);
+    const { error } = await supabase
+      .from('users')
+      .update({
+        first_name: editedName,
+        last_name: editedLastName,
+        email: editedEmail,
+        avatar_url: avatarUrl
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      Alert.alert('Error', 'Failed to update profile');
+    } else {
+      setEditing(false);
+      fetchProfileData();
     }
   };
 
-  // Update user profile
-  const updateProfile = async () => {
-    try {
-      let updatedUser = {
-        full_name: newFullName,
-        email: newEmail,
-        bio: bio,
-      };
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
 
-      // If a profile image is selected, upload the image and update the profile picture
-      if (profileImage) {
-        const fileExt = profileImage.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+    if (!result.canceled) {
+      const image = result.assets[0];
+      const fileExt = image.uri.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
 
-        const { data, error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(fileName, { uri: profileImage });
+      const response = await fetch(image.uri);
+      const blob = await response.blob();
 
-        if (uploadError) {
-          throw new Error('Failed to upload image');
-        }
+      const { error: uploadError } = await supabase
+        .storage
+        .from('avatars')
+        .upload(filePath, blob, {
+          cacheControl: '3600',
+          upsert: true,
+        });
 
-        const imageUrl = data?.path
-          ? `${supabase.storage.url}/profile-pictures/${data.path}`
-          : null;
-
-        updatedUser.profile_picture = imageUrl;
+      if (uploadError) {
+        Alert.alert('Upload failed');
+        return;
       }
 
-      // Update user profile in Supabase
-      const { error } = await supabase.auth.updateUser(updatedUser);
+      const { data } = supabase
+        .storage
+        .from('avatars')
+        .getPublicUrl(filePath);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      alert('Profile updated successfully!');
-    } catch (err) {
-      alert(`Error: ${err.message}`);
+      setAvatarUrl(data.publicUrl);
+      Alert.alert('Success', 'Profile picture updated');
     }
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#176B87" />
       </View>
     );
   }
 
-  if (!user) {
+  const onBack = () => {
+    navigation.goBack();
+  };
+
+  if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>No user data available. Please log in.</Text>
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#176B87" />
       </View>
     );
   }
+
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.profileHeader}>
-        {/* Profile Image */}
-        {profileImage || user?.user_metadata?.profile_picture ? (
-          <Image
-            source={{ uri: profileImage || user?.user_metadata?.profile_picture }}
-            style={styles.profileImage}
-          />
-        ) : (
-          <Image
-            source={require('../assets/default-profile.jpg')} // Correct path to your local image
-            style={styles.profileImage}
-          />
-        )}
-
-        {/* Change Profile Picture Button with Camera Icon */}
-        <TouchableOpacity onPress={pickImage} style={styles.changeImageButton}>
-          <Ionicons name="camera" size={24} color="#176B87" /> {/* Smaller camera icon */}
+        <View style={styles.fullScreen}>
+          <View style={styles.header1}>
+            <TouchableOpacity onPress={onBack}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Profile</Text>
+            <View style={{ width: 24 }} />
+          </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handlePickImage} style={styles.avatarContainer}>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={64} color="#fff" />
+            </View>
+          )}
         </TouchableOpacity>
-
-        {/* User Info */}
-        <View style={styles.userInfo}>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            value={newFullName}
-            onChangeText={setNewFullName}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={newEmail}
-            onChangeText={setNewEmail}
-          />
-
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Bio"
-            value={bio}
-            onChangeText={setBio}
-            multiline
-          />
-        </View>
-
-        {/* Save Profile Button */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={updateProfile}>
-          <Text style={styles.buttonText}>Save Profile</Text>
+        <Text style={styles.name}>{(userInfo?.first_name || 'Student') + ' ' + (userInfo?.last_name || '')}</Text>
+        <Text style={styles.email}>{userInfo?.email || 'N/A'}</Text>
+        <TouchableOpacity onPress={() => setEditing(true)} style={styles.editIcon}>
+          <Ionicons name="create-outline" size={24} color="#176B87" />
         </TouchableOpacity>
       </View>
 
-      {/* Logout Button */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => {
-          // Log out functionality
-          supabase.auth.signOut();
-          alert('Logged out successfully');
-        }}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>My Submissions</Text>
+        {submissions.length > 0 ? (
+          submissions.map((item, index) => (
+            <Text key={index} style={styles.item}>• {item.plan_name}</Text>
+          ))
+        ) : (
+          <Text style={styles.placeholder}>No submissions yet.</Text>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Saved Reading Materials</Text>
+        {savedMaterials.length > 0 ? (
+          savedMaterials.map((item, index) => (
+            <Text key={index} style={styles.item}>• {item.title}</Text>
+          ))
+        ) : (
+          <Text style={styles.placeholder}>No materials saved.</Text>
+        )}
+      </View>
+
+      <Modal visible={editing} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.sectionTitle}>Edit Profile</Text>
+            <TextInput
+              style={styles.input}
+              value={editedName}
+              onChangeText={setEditedName}
+              placeholder="Full Name"
+            />
+            <TextInput
+              style={styles.input}
+              value={editedLastName}
+              onChangeText={setEditedLastName}
+              placeholder="Last Name"
+            />
+            <TextInput
+              style={styles.input}
+              value={editedEmail}
+              onChangeText={setEditedEmail}
+              placeholder="Email"
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity onPress={handleSaveProfile} style={styles.modalButton}>
+                <Text style={styles.modalButtonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setEditing(false)} style={styles.modalCancel}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+fullScreen: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f0f4f7',
-    justifyContent: 'center',
+    backgroundColor: '#EEF5FF',
   },
-  profileHeader: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  profileImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    marginBottom: 15,
-  },
-  changeImageButton: {
-    backgroundColor: '#fff',
-    padding: 8,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#B4D4FF',
-    marginTop: 10,
-    width: 50,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  changeImageText: {
-    color: '#176B87',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  userInfo: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 12,
-    width: '100%',
-    fontSize: 16,
-    color: '#333',
-    backgroundColor: '#f9f9f9',
-    marginBottom: 15,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  button: {
+  header1: {
+    height: '8%',
     backgroundColor: '#176B87',
-    paddingVertical: 12,
-    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 15,
-    width: '80%',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    padding: 12,
+    elevation: 4,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
   },
+container: { 
+    flex: 1, 
+    backgroundColor: '#EEF5FF' 
+  },
+content: { padding: 20 },
+loader: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' },
+header: {
+  alignItems: 'center',
+  marginBottom: 30,
+  paddingVertical: 20,
+  backgroundColor: '#fff',
+  borderRadius: 16,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  elevation: 4,
+},
+avatarContainer: {
+  marginBottom: 10,
+},
+avatar: {
+  width: 100,
+  height: 100,
+  borderRadius: 50,
+  borderWidth: 2,
+  borderColor: '#176B87',
+},
+avatarPlaceholder: {
+  width: 100,
+  height: 100,
+  borderRadius: 50,
+  backgroundColor: '#176B87',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+name: {
+  fontSize: 24,
+  fontWeight: 'bold',
+  color: '#176B87',
+  marginTop: 8,
+},
+email: {
+  fontSize: 16,
+  color: '#666',
+  marginBottom: 10,
+},
+editIcon: {
+  position: 'absolute',
+  top: 16,
+  right: 16,
+},
+section: { 
+  marginBottom: 25 
+},
+sectionTitle: { 
+  fontSize: 18, 
+  fontWeight: '600', 
+  color: '#176B87', 
+  marginBottom: 10 
+},
+item: { 
+  fontSize: 15, 
+  color: '#333', 
+  marginBottom: 5, 
+  marginLeft: 10 
+},
+placeholder: { 
+  fontStyle: 'italic', 
+  color: '#888', 
+  marginLeft: 10 
+},
+modalOverlay: {
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(0,0,0,0.5)'
+},
+modalContent: {
+    width: '90%', backgroundColor: 'white', padding: 20,
+    borderRadius: 12, elevation: 5, alignItems: 'stretch',
+},
+input: {
+    backgroundColor: '#f3f3f3', padding: 10,
+    borderRadius: 8, marginBottom: 12,
+},
+modalButton: {
+    backgroundColor: '#176B87',
+    padding: 10, borderRadius: 8, flex: 1, alignItems: 'center',
+},
+modalButtonText: {
+    color: 'white', fontWeight: '600',
+},
+modalCancel: {
+    backgroundColor: '#eee',
+    padding: 10, borderRadius: 8, flex: 1, alignItems: 'center',
+},
+modalCancelText: {
+    color: '#333', fontWeight: '600',
+},
 });
 
 export default Profile;

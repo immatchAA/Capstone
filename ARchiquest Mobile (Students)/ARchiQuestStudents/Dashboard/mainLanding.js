@@ -376,7 +376,8 @@ const MainLanding = () => {
             <Ionicons name="home" size={24} color="#176BB7" />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.mobileNavItem}>
+          <TouchableOpacity style={styles.mobileNavItem}
+          onPress={() => navigation.navigate('Profile')}>
             <Ionicons name="person-outline" size={24} color="#176BB7" />
           </TouchableOpacity>
           
