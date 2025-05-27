@@ -24,6 +24,188 @@ import { supabase } from "../supabaseClient"
 //Zoom and Pan image
 import ImageViewing from "react-native-image-viewing"
 
+// Enhanced Educational Rubrics System
+const EDUCATIONAL_RUBRICS = {
+  budgetManagement: {
+    name: "Budget Management",
+    maxScore: 25,
+    criteria: [
+      {
+        level: "Excellent",
+        scoreRange: [23, 25],
+        description: "Stays 10-15% under budget with strategic cost allocation",
+        feedback: "Outstanding budget management! You demonstrate professional-level cost control skills.",
+      },
+      {
+        level: "Proficient",
+        scoreRange: [18, 22],
+        description: "Stays within 5% of budget with good cost awareness",
+        feedback: "Good budget management. You show solid understanding of cost control principles.",
+      },
+      {
+        level: "Developing",
+        scoreRange: [12, 17],
+        description: "Exceeds budget by 5-15% but shows cost awareness",
+        feedback: "Your budget management needs improvement. Consider reviewing high-cost items.",
+      },
+      {
+        level: "Beginning",
+        scoreRange: [0, 11],
+        description: "Significantly over budget with poor cost control",
+        feedback:
+          "Budget management requires significant improvement. This would not be acceptable in professional practice.",
+      },
+    ],
+  },
+  materialSelection: {
+    name: "Material Selection & Specification",
+    maxScore: 25,
+    criteria: [
+      {
+        level: "Excellent",
+        scoreRange: [23, 25],
+        description: "Comprehensive material selection with appropriate specifications",
+        feedback: "Excellent material selection! You demonstrate thorough understanding of construction requirements.",
+      },
+      {
+        level: "Proficient",
+        scoreRange: [18, 22],
+        description: "Good material selection with minor gaps",
+        feedback: "Good material selection. Most essential components are included with appropriate specifications.",
+      },
+      {
+        level: "Developing",
+        scoreRange: [12, 17],
+        description: "Basic material selection with some missing components",
+        feedback: "Material selection shows understanding but has gaps. Review structural and finishing requirements.",
+      },
+      {
+        level: "Beginning",
+        scoreRange: [0, 11],
+        description: "Inadequate material selection with major gaps",
+        feedback: "Material selection needs significant improvement. Many essential components are missing.",
+      },
+    ],
+  },
+  costEfficiency: {
+    name: "Cost Efficiency & Value Engineering",
+    maxScore: 25,
+    criteria: [
+      {
+        level: "Excellent",
+        scoreRange: [23, 25],
+        description: "Highly efficient cost per sqm with smart material choices",
+        feedback: "Excellent cost efficiency! You demonstrate strong value engineering principles.",
+      },
+      {
+        level: "Proficient",
+        scoreRange: [18, 22],
+        description: "Good cost efficiency within industry standards",
+        feedback: "Good cost efficiency. Your cost per square meter is within acceptable industry ranges.",
+      },
+      {
+        level: "Developing",
+        scoreRange: [12, 17],
+        description: "Moderate cost efficiency with room for optimization",
+        feedback: "Cost efficiency could be improved. Consider alternative materials or construction methods.",
+      },
+      {
+        level: "Beginning",
+        scoreRange: [0, 11],
+        description: "Poor cost efficiency, significantly above standards",
+        feedback: "Cost efficiency needs major improvement. Current approach is not economically viable.",
+      },
+    ],
+  },
+  sustainability: {
+    name: "Sustainability & Environmental Impact",
+    maxScore: 15,
+    criteria: [
+      {
+        level: "Excellent",
+        scoreRange: [14, 15],
+        description: "Strong focus on sustainable materials and practices",
+        feedback: "Outstanding sustainability focus! Your choices would qualify for green building certifications.",
+      },
+      {
+        level: "Proficient",
+        scoreRange: [11, 13],
+        description: "Good incorporation of sustainable elements",
+        feedback: "Good sustainability awareness. You show understanding of environmental considerations.",
+      },
+      {
+        level: "Developing",
+        scoreRange: [6, 10],
+        description: "Some sustainable elements with room for improvement",
+        feedback: "Sustainability could be enhanced. Consider more eco-friendly material alternatives.",
+      },
+      {
+        level: "Beginning",
+        scoreRange: [0, 5],
+        description: "Limited consideration of sustainability",
+        feedback: "Sustainability needs attention. Modern construction requires environmental consciousness.",
+      },
+    ],
+  },
+  technicalAccuracy: {
+    name: "Technical Accuracy & Industry Standards",
+    maxScore: 10,
+    criteria: [
+      {
+        level: "Excellent",
+        scoreRange: [9, 10],
+        description: "Accurate quantities and specifications meeting industry standards",
+        feedback: "Excellent technical accuracy! Your specifications meet professional standards.",
+      },
+      {
+        level: "Proficient",
+        scoreRange: [7, 8],
+        description: "Good technical accuracy with minor discrepancies",
+        feedback: "Good technical accuracy. Most specifications are appropriate for the project type.",
+      },
+      {
+        level: "Developing",
+        scoreRange: [4, 6],
+        description: "Basic technical accuracy with some errors",
+        feedback: "Technical accuracy needs improvement. Review industry standards and best practices.",
+      },
+      {
+        level: "Beginning",
+        scoreRange: [0, 3],
+        description: "Poor technical accuracy with significant errors",
+        feedback: "Technical accuracy requires major improvement. Current specifications have serious issues.",
+      },
+    ],
+  },
+}
+
+// Helper functions for rubrics
+const getRubricLevel = (rubric, score) => {
+  for (const criterion of rubric.criteria) {
+    if (score >= criterion.scoreRange[0] && score <= criterion.scoreRange[1]) {
+      return criterion.level
+    }
+  }
+  return "Beginning"
+}
+
+const getRubricFeedback = (rubric, score) => {
+  for (const criterion of rubric.criteria) {
+    if (score >= criterion.scoreRange[0] && score <= criterion.scoreRange[1]) {
+      return criterion.feedback
+    }
+  }
+  return "Score needs improvement."
+}
+
+const getLetterGrade = (totalScore) => {
+  if (totalScore >= 90) return "A"
+  if (totalScore >= 80) return "B"
+  if (totalScore >= 70) return "C"
+  if (totalScore >= 60) return "D"
+  return "F"
+}
+
 // Progress tracking component
 const ProgressBar = ({ progress, totalSteps }) => {
   const animatedWidth = useRef(new Animated.Value(0)).current
@@ -123,8 +305,11 @@ const DesignPlanDetails = ({ route, navigation }) => {
   const [savingProgress, setSavingProgress] = useState(false)
   const [userId, setUserId] = useState(null)
 
+  // Enhanced feedback states
   const [isFeedbackModalVisible, setIsFeedbackModalVisible] = useState(false)
   const [feedbackData, setFeedbackData] = useState(null)
+  const [showRubricModal, setShowRubricModal] = useState(false)
+  const [classAnalytics, setClassAnalytics] = useState(null)
 
   // Define the steps for the design plan
   const progressSteps = [
@@ -176,6 +361,11 @@ const DesignPlanDetails = ({ route, navigation }) => {
       if (userId) {
         fetchStudentProgress(designPlan.id)
       }
+
+      // Fetch class analytics for comparison
+      if (classId) {
+        fetchClassAnalytics()
+      }
     } else if (route.params?.planId) {
       // If we only have the plan ID, fetch the details
       fetchPlanDetails(route.params.planId)
@@ -218,6 +408,25 @@ const DesignPlanDetails = ({ route, navigation }) => {
       }
     } catch (err) {
       console.error("Error in fetchUserData:", err)
+    }
+  }
+
+  const fetchClassAnalytics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("class_scoring_analytics")
+        .select("*")
+        .eq("class_id", classId)
+        .eq("design_plan_id", designPlan?.id)
+        .single()
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching class analytics:", error)
+      } else {
+        setClassAnalytics(data)
+      }
+    } catch (err) {
+      console.error("Exception fetching class analytics:", err)
     }
   }
 
@@ -519,8 +728,6 @@ const DesignPlanDetails = ({ route, navigation }) => {
     }
   }
 
-  //Design File Image
-
   // Format currency with the appropriate symbol
   const formatCurrency = (amount, currency = "PHP") => {
     if (!amount && amount !== 0) return "N/A"
@@ -603,7 +810,426 @@ const DesignPlanDetails = ({ route, navigation }) => {
     return total
   }
 
-  // Save estimate
+  // Enhanced scoring calculation with educational rubrics
+  const calculateEducationalScore = (totalCost, budget, planDetails, selectedMaterials, floorArea) => {
+    const scoreData = {
+      overallScore: 0,
+      letterGrade: "",
+      categories: {},
+      educationalFeedback: [],
+      recommendations: [],
+      strengths: [],
+      areasForImprovement: [],
+    }
+
+    // 1. Budget Management Assessment
+    const budgetRatio = totalCost / budget
+    let budgetScore = 0
+
+    if (budgetRatio <= 0.85) budgetScore = 25
+    else if (budgetRatio <= 0.95) budgetScore = 22
+    else if (budgetRatio <= 1.0) budgetScore = 19
+    else if (budgetRatio <= 1.05) budgetScore = 15
+    else if (budgetRatio <= 1.15) budgetScore = 10
+    else budgetScore = 5
+
+    scoreData.categories.budgetManagement = {
+      score: budgetScore,
+      maxScore: 25,
+      level: getRubricLevel(EDUCATIONAL_RUBRICS.budgetManagement, budgetScore),
+      feedback: getRubricFeedback(EDUCATIONAL_RUBRICS.budgetManagement, budgetScore),
+    }
+
+    // 2. Enhanced Material Selection Assessment with Answer Key Comparison
+    let materialScore = 0
+    let answerKeyMatchScore = 0
+    let essentialMaterialsScore = 0
+
+    // Get instructor's selected materials (answer key) from the design plan
+    const instructorAnswerKey = planDetails?.selected_materials || []
+
+    if (instructorAnswerKey.length > 0) {
+      // Handle both old format (array of IDs) and new format (array of objects)
+      const instructorMaterialData = instructorAnswerKey
+
+      if (typeof instructorAnswerKey[0] === "string" || typeof instructorAnswerKey[0] === "number") {
+        // Old format - just material IDs
+        const studentMaterialIds = selectedMaterials.map((m) => m.id)
+        const instructorMaterialIds = instructorAnswerKey
+
+        const matchingMaterials = studentMaterialIds.filter((id) => instructorMaterialIds.includes(id))
+        const extraMaterials = studentMaterialIds.filter((id) => !instructorMaterialIds.includes(id))
+        const missedMaterials = instructorMaterialIds.filter((id) => !studentMaterialIds.includes(id))
+
+        const matchPercentage = matchingMaterials.length / Math.max(instructorMaterialIds.length, 1)
+        answerKeyMatchScore = Math.round(matchPercentage * 15)
+        const extraPenalty = Math.min(extraMaterials.length * 1, 5)
+        answerKeyMatchScore = Math.max(0, answerKeyMatchScore - extraPenalty)
+      } else {
+        // New format - objects with quantities and costs
+        const studentMaterialIds = selectedMaterials.map((m) => m.id)
+        const instructorMaterialIds = instructorMaterialData.map((item) => item.materialId)
+
+        // Material selection match (40% of material score)
+        const matchingMaterials = studentMaterialIds.filter((id) => instructorMaterialIds.includes(id))
+        const extraMaterials = studentMaterialIds.filter((id) => !instructorMaterialIds.includes(id))
+        const missedMaterials = instructorMaterialIds.filter((id) => !studentMaterialIds.includes(id))
+
+        const selectionMatchPercentage = matchingMaterials.length / Math.max(instructorMaterialIds.length, 1)
+        const selectionScore = Math.round(selectionMatchPercentage * 10) // Max 10 points
+
+        // Quantity accuracy assessment (35% of material score)
+        let quantityScore = 0
+        let totalQuantityAccuracy = 0
+        let quantityComparisons = 0
+
+        matchingMaterials.forEach((materialId) => {
+          const studentMaterial = selectedMaterials.find((m) => m.id === materialId)
+          const instructorMaterial = instructorMaterialData.find((item) => item.materialId === materialId)
+
+          if (studentMaterial && instructorMaterial && instructorMaterial.quantity > 0) {
+            const studentQty = studentMaterial.quantity
+            const expectedQty = instructorMaterial.quantity
+
+            // Calculate accuracy percentage (closer to expected = higher score)
+            const qtyDifference = Math.abs(studentQty - expectedQty) / expectedQty
+            const qtyAccuracy = Math.max(0, 1 - qtyDifference) // 1 = perfect, 0 = very wrong
+
+            totalQuantityAccuracy += qtyAccuracy
+            quantityComparisons++
+          }
+        })
+
+        if (quantityComparisons > 0) {
+          const avgQuantityAccuracy = totalQuantityAccuracy / quantityComparisons
+          quantityScore = Math.round(avgQuantityAccuracy * 8.75) // Max 8.75 points
+        }
+
+        // Cost estimation accuracy (25% of material score)
+        let costScore = 0
+        let totalCostAccuracy = 0
+        let costComparisons = 0
+
+        matchingMaterials.forEach((materialId) => {
+          const studentMaterial = selectedMaterials.find((m) => m.id === materialId)
+          const instructorMaterial = instructorMaterialData.find((item) => item.materialId === materialId)
+
+          if (studentMaterial && instructorMaterial && instructorMaterial.estimatedCost > 0) {
+            const studentCost = studentMaterial.price * studentMaterial.quantity
+            const expectedCost = instructorMaterial.estimatedCost * instructorMaterial.quantity
+
+            // Calculate cost accuracy
+            const costDifference = Math.abs(studentCost - expectedCost) / expectedCost
+            const costAccuracy = Math.max(0, 1 - costDifference)
+
+            totalCostAccuracy += costAccuracy
+            costComparisons++
+          }
+        })
+
+        if (costComparisons > 0) {
+          const avgCostAccuracy = totalCostAccuracy / costComparisons
+          costScore = Math.round(avgCostAccuracy * 6.25) // Max 6.25 points
+        }
+
+        // Penalty for extra materials
+        const extraPenalty = Math.min(extraMaterials.length * 0.5, 3)
+
+        answerKeyMatchScore = Math.max(0, selectionScore + quantityScore + costScore - extraPenalty)
+
+        // Store detailed analysis for feedback
+        scoreData.materialAnalysis = {
+          totalInstructorMaterials: instructorMaterialIds.length,
+          matchingMaterials: matchingMaterials.length,
+          extraMaterials: extraMaterials.length,
+          missedMaterials: missedMaterials.length,
+          selectionMatchPercentage: (selectionMatchPercentage * 100).toFixed(1),
+          quantityAccuracy:
+            quantityComparisons > 0 ? ((totalQuantityAccuracy / quantityComparisons) * 100).toFixed(1) : "N/A",
+          costAccuracy: costComparisons > 0 ? ((totalCostAccuracy / costComparisons) * 100).toFixed(1) : "N/A",
+          selectionScore: selectionScore,
+          quantityScore: quantityScore,
+          costScore: costScore,
+          answerKeyScore: answerKeyMatchScore,
+          enhancedScoring: true,
+        }
+      }
+
+      // Essential materials coverage (remaining percentage)
+      const essentialMaterials = [
+        "cement",
+        "concrete",
+        "steel",
+        "rebar",
+        "sand",
+        "gravel",
+        "aggregate",
+        "wood",
+        "lumber",
+        "tile",
+        "flooring",
+        "paint",
+        "primer",
+        "roofing",
+        "insulation",
+        "drywall",
+        "plumbing",
+        "electrical",
+        "windows",
+        "doors",
+      ]
+
+      const selectedMaterialNames = selectedMaterials.map((m) => m.material_name.toLowerCase())
+      let essentialCount = 0
+
+      essentialMaterials.forEach((material) => {
+        if (selectedMaterialNames.some((name) => name.includes(material))) {
+          essentialCount++
+        }
+      })
+
+      const essentialCompleteness = essentialCount / essentialMaterials.length
+      essentialMaterialsScore = Math.round(essentialCompleteness * 10) // Max 10 points
+
+      materialScore = answerKeyMatchScore + essentialMaterialsScore
+    } else {
+      // Fallback to original scoring if no answer key is available
+      const essentialMaterials = [
+        "cement",
+        "concrete",
+        "steel",
+        "rebar",
+        "sand",
+        "gravel",
+        "aggregate",
+        "wood",
+        "lumber",
+        "tile",
+        "flooring",
+        "paint",
+        "primer",
+        "roofing",
+        "insulation",
+        "drywall",
+        "plumbing",
+        "electrical",
+        "windows",
+        "doors",
+      ]
+
+      const selectedMaterialNames = selectedMaterials.map((m) => m.material_name.toLowerCase())
+      let essentialCount = 0
+
+      essentialMaterials.forEach((material) => {
+        if (selectedMaterialNames.some((name) => name.includes(material))) {
+          essentialCount++
+        }
+      })
+
+      const materialCompleteness = essentialCount / essentialMaterials.length
+      materialScore = Math.round(materialCompleteness * 25)
+
+      scoreData.materialAnalysis = {
+        fallbackScoring: true,
+        essentialMaterialsFound: essentialCount,
+        totalEssentialMaterials: essentialMaterials.length,
+      }
+    }
+
+    scoreData.categories.materialSelection = {
+      score: materialScore,
+      maxScore: 25,
+      level: getRubricLevel(EDUCATIONAL_RUBRICS.materialSelection, materialScore),
+      feedback: getRubricFeedback(EDUCATIONAL_RUBRICS.materialSelection, materialScore),
+    }
+
+    // 3. Cost Efficiency Assessment
+    const costPerSqm = totalCost / (floorArea || 100)
+    const lowCostStandard = 15000 // PHP per sqm
+    const highCostStandard = 30000 // PHP per sqm
+
+    let efficiencyScore = 0
+    if (costPerSqm <= lowCostStandard) efficiencyScore = 25
+    else if (costPerSqm <= 20000) efficiencyScore = 20
+    else if (costPerSqm <= 25000) efficiencyScore = 15
+    else if (costPerSqm <= highCostStandard) efficiencyScore = 10
+    else efficiencyScore = 5
+
+    scoreData.categories.costEfficiency = {
+      score: efficiencyScore,
+      maxScore: 25,
+      level: getRubricLevel(EDUCATIONAL_RUBRICS.costEfficiency, efficiencyScore),
+      feedback: getRubricFeedback(EDUCATIONAL_RUBRICS.costEfficiency, efficiencyScore),
+    }
+
+    // 4. Sustainability Assessment
+    const sustainableKeywords = [
+      "bamboo",
+      "recycled",
+      "sustainable",
+      "eco",
+      "green",
+      "renewable",
+      "low-voc",
+      "energy-efficient",
+      "solar",
+      "led",
+      "insulated",
+    ]
+
+    let sustainableCount = 0
+    const selectedMaterialNames = selectedMaterials.map((m) => m.material_name.toLowerCase())
+    selectedMaterialNames.forEach((name) => {
+      if (sustainableKeywords.some((keyword) => name.includes(keyword))) {
+        sustainableCount++
+      }
+    })
+
+    const sustainabilityRatio = sustainableCount / Math.max(selectedMaterials.length, 1)
+    const sustainabilityScore = Math.min(15, Math.round(sustainabilityRatio * 30))
+
+    scoreData.categories.sustainability = {
+      score: sustainabilityScore,
+      maxScore: 15,
+      level: getRubricLevel(EDUCATIONAL_RUBRICS.sustainability, sustainabilityScore),
+      feedback: getRubricFeedback(EDUCATIONAL_RUBRICS.sustainability, sustainabilityScore),
+    }
+
+    // 5. Technical Accuracy Assessment
+    const hasStructuralMaterials = selectedMaterialNames.some((name) =>
+      ["cement", "steel", "rebar", "concrete"].some((structural) => name.includes(structural)),
+    )
+    const hasFinishingMaterials = selectedMaterialNames.some((name) =>
+      ["paint", "tile", "flooring"].some((finishing) => name.includes(finishing)),
+    )
+    const hasRoofingMaterials = selectedMaterialNames.some((name) =>
+      ["roofing", "roof", "shingle"].some((roofing) => name.includes(roofing)),
+    )
+
+    let technicalScore = 0
+    if (hasStructuralMaterials) technicalScore += 4
+    if (hasFinishingMaterials) technicalScore += 3
+    if (hasRoofingMaterials) technicalScore += 3
+
+    scoreData.categories.technicalAccuracy = {
+      score: technicalScore,
+      maxScore: 10,
+      level: getRubricLevel(EDUCATIONAL_RUBRICS.technicalAccuracy, technicalScore),
+      feedback: getRubricFeedback(EDUCATIONAL_RUBRICS.technicalAccuracy, technicalScore),
+    }
+
+    // Calculate overall score
+    scoreData.overallScore = Object.values(scoreData.categories).reduce((total, category) => total + category.score, 0)
+
+    // Assign letter grade
+    scoreData.letterGrade = getLetterGrade(scoreData.overallScore)
+
+    // Generate educational feedback
+    generateEducationalFeedback(scoreData)
+
+    return scoreData
+  }
+
+  const generateEducationalFeedback = (scoreData) => {
+    // Identify strengths
+    Object.entries(scoreData.categories).forEach(([key, category]) => {
+      if (category.score >= category.maxScore * 0.8) {
+        scoreData.strengths.push(`${EDUCATIONAL_RUBRICS[key]?.name || key}: ${category.level}`)
+      } else if (category.score < category.maxScore * 0.6) {
+        scoreData.areasForImprovement.push(`${EDUCATIONAL_RUBRICS[key]?.name || key}: ${category.level}`)
+      }
+    })
+
+    // Generate specific recommendations
+    if (scoreData.categories.budgetManagement.score < 15) {
+      scoreData.recommendations.push("Review material quantities and explore cost-effective alternatives")
+      scoreData.recommendations.push("Consider phased construction to spread costs over time")
+    }
+
+    if (scoreData.categories.materialSelection.score < 18) {
+      scoreData.recommendations.push(
+        "Ensure all building systems are represented (structural, mechanical, electrical, finishes)",
+      )
+      scoreData.recommendations.push("Research local building codes and material requirements")
+    }
+
+    if (scoreData.categories.sustainability.score < 10) {
+      scoreData.recommendations.push("Incorporate more sustainable materials and energy-efficient systems")
+      scoreData.recommendations.push("Consider life-cycle costs and environmental impact")
+    }
+
+    // Generate specific feedback based on answer key comparison
+    if (scoreData.materialAnalysis && !scoreData.materialAnalysis.fallbackScoring) {
+      const analysis = scoreData.materialAnalysis
+
+      if (analysis.enhancedScoring) {
+        // Enhanced feedback for new format
+        if (analysis.selectionMatchPercentage >= 80) {
+          scoreData.strengths.push(
+            `Excellent material selection: ${analysis.selectionMatchPercentage}% match with instructor's answer key`,
+          )
+        }
+
+        if (analysis.quantityAccuracy !== "N/A" && Number.parseFloat(analysis.quantityAccuracy) >= 80) {
+          scoreData.strengths.push(`Good quantity estimation: ${analysis.quantityAccuracy}% accuracy`)
+        } else if (analysis.quantityAccuracy !== "N/A") {
+          scoreData.areasForImprovement.push(
+            `Quantity estimation needs improvement: ${analysis.quantityAccuracy}% accuracy`,
+          )
+          scoreData.recommendations.push("Review material quantity calculations and consider waste factors")
+        }
+
+        if (analysis.costAccuracy !== "N/A" && Number.parseFloat(analysis.costAccuracy) >= 80) {
+          scoreData.strengths.push(`Good cost estimation: ${analysis.costAccuracy}% accuracy`)
+        } else if (analysis.costAccuracy !== "N/A") {
+          scoreData.areasForImprovement.push(`Cost estimation needs improvement: ${analysis.costAccuracy}% accuracy`)
+          scoreData.recommendations.push("Review material pricing and consider market rates")
+        }
+      } else {
+        // Original feedback for old format
+        if (analysis.matchPercentage >= 80) {
+          scoreData.strengths.push(
+            `Excellent material selection: ${analysis.matchPercentage}% match with instructor's answer key`,
+          )
+        }
+      }
+
+      // Common feedback
+      if (analysis.extraMaterials > 0) {
+        scoreData.recommendations.push(
+          `Consider if all ${selectedMaterials.length} selected materials are necessary - you selected ${analysis.extraMaterials} materials not in the answer key`,
+        )
+      }
+
+      if (analysis.missedMaterials > 0) {
+        scoreData.recommendations.push(
+          `You missed ${analysis.missedMaterials} materials that were recommended by the instructor`,
+        )
+      }
+
+      // Add educational context about enhanced scoring
+      if (analysis.enhancedScoring) {
+        scoreData.educationalFeedback.push(
+          `Your material selection was evaluated on three criteria: material choice (40%), quantity accuracy (35%), and cost estimation (25%).`,
+        )
+      }
+    } else {
+      scoreData.educationalFeedback.push(
+        `Material selection was evaluated based on essential construction materials coverage since no instructor answer key was available.`,
+      )
+    }
+
+    // Add educational context
+    scoreData.educationalFeedback.push(
+      "Professional architects typically maintain a 5-10% contingency in their budgets for unexpected costs.",
+    )
+    scoreData.educationalFeedback.push(
+      "Material costs usually represent 60-70% of total construction costs in residential projects.",
+    )
+    scoreData.educationalFeedback.push("Sustainable design practices can reduce long-term operational costs by 20-30%.")
+  }
+
+  // Enhanced save function with comprehensive scoring
   const saveEstimate = async () => {
     if (!estimateName.trim()) {
       Alert.alert("Error", "Please provide a name for this estimate")
@@ -624,12 +1250,13 @@ const DesignPlanDetails = ({ route, navigation }) => {
         return
       }
 
-      // Calculate score based on various factors
-      const scoreData = calculateDesignScore(
+      // Calculate enhanced educational score
+      const scoreData = calculateEducationalScore(
         totalEstimatedCost,
         planDetails?.budget || 300000,
-        planDetails || {},
+        planDetails,
         selectedMaterials,
+        floorArea,
       )
 
       // Create estimate record
@@ -640,11 +1267,11 @@ const DesignPlanDetails = ({ route, navigation }) => {
           design_plan_id: planDetails?.id,
           student_id: user.id,
           total_cost: totalEstimatedCost,
-          status: "completed", // Changed from "draft" to "completed"
+          status: "completed",
           class_id: classId,
-          score: scoreData.overallScore, // Add the score
-           // Add score breakdown
-          // completed_at field removed as it doesn't exist in the database
+          score: scoreData.overallScore,
+          letter_grade: scoreData.letterGrade,
+          created_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -656,7 +1283,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
         return
       }
 
-      // Save selected materials
+      // Save estimate items
       const estimateItems = selectedMaterials.map((material) => ({
         estimate_id: estimate.id,
         material_id: material.id,
@@ -670,38 +1297,62 @@ const DesignPlanDetails = ({ route, navigation }) => {
       if (itemsError) {
         console.error("Error saving estimate items:", itemsError)
         Alert.alert("Warning", `Estimate saved but items failed: ${itemsError.message}`)
-      } else {
-        // Update progress to final step
-        updateProgress(progressSteps.length - 1)
+      }
 
-        // Generate educational feedback
-        const feedback = generateEducationalFeedback(scoreData)
+      // Save detailed scoring data
+      const { error: scoreError } = await supabase.from("student_scores").insert({
+        student_id: user.id,
+        estimate_id: estimate.id,
+        design_plan_id: planDetails?.id,
+        class_id: classId,
+        rubric: "cost_estimation",
+        overall_score: scoreData.overallScore,
+        max_score: 100,
+        letter_grade: scoreData.letterGrade,
+        budget_management_score: scoreData.categories.budgetManagement.score,
+        material_selection_score: scoreData.categories.materialSelection.score,
+        cost_efficiency_score: scoreData.categories.costEfficiency.score,
+        sustainability_score: scoreData.categories.sustainability.score,
+        technical_accuracy_score: scoreData.categories.technicalAccuracy.score,
+        feedback_data: JSON.stringify({
+          categories: scoreData.categories,
+          strengths: scoreData.strengths,
+          areasForImprovement: scoreData.areasForImprovement,
+          recommendations: scoreData.recommendations,
+          educationalFeedback: scoreData.educationalFeedback,
+        }),
+        created_at: new Date().toISOString(),
+      })
 
-        // Complete the design plan
-        const completionResult = completeDesignPlan(scoreData)
+      if (scoreError) {
+        console.error("Error saving score data:", scoreError)
+        // Don't throw error here as the estimate was saved successfully
+      }
 
-        // Show completion dialog with score
-        showCompletionDialog(scoreData, feedback, completionResult.recommendations)
+      // Update progress to final step
+      updateProgress(progressSteps.length - 1)
 
-        setIsEstimateModalVisible(false)
+      // Show completion dialog with enhanced feedback
+      showCompletionDialog(scoreData)
 
-        // Update the design plan status in the database
-        try {
-          const { error: updateError } = await supabase
-            .from("student_progress")
-            .update({
-              is_completed: true,
-              completed_at: new Date().toISOString(),
-            })
-            .eq("student_id", userId)
-            .eq("id", planDetails.id)
+      setIsEstimateModalVisible(false)
 
-          if (updateError) {
-            console.error("Error updating design plan status:", updateError)
-          }
-        } catch (err) {
-          console.error("Exception updating design plan status:", err)
+      // Update the design plan status in the database
+      try {
+        const { error: updateError } = await supabase
+          .from("student_progress")
+          .update({
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("student_id", userId)
+          .eq("design_plan_id", planDetails.id)
+
+        if (updateError) {
+          console.error("Error updating design plan status:", updateError)
         }
+      } catch (err) {
+        console.error("Exception updating design plan status:", err)
       }
     } catch (err) {
       console.error("Exception in saveEstimate:", err)
@@ -711,240 +1362,20 @@ const DesignPlanDetails = ({ route, navigation }) => {
     }
   }
 
-  // Calculate design score based on multiple architectural factors
-  const calculateDesignScore = (totalCost, budget, plan, materials) => {
-    // Use default values if parameters are null
-    budget = budget || 300000
-    plan = plan || {}
-    materials = materials || []
-
-    // Initialize score categories
-    const scoreData = {
-      overallScore: 0,
-      categories: {
-        budgetManagement: {
-          score: 0,
-          maxScore: 30,
-          description: "Budget utilization and cost control",
-        },
-        materialSelection: {
-          score: 0,
-          maxScore: 25,
-          description: "Appropriate material choices and quantities",
-        },
-        costEfficiency: {
-          score: 0,
-          maxScore: 25,
-          description: "Cost per square meter efficiency",
-        },
-        sustainability: {
-          score: 0,
-          maxScore: 20,
-          description: "Use of sustainable materials and practices",
-        },
-      },
-    }
-
-    // 1. Budget Management Score (30 points)
-    const budgetRatio = totalCost / budget
-    if (budgetRatio <= 0.85) {
-      // Well under budget (excellent)
-      scoreData.categories.budgetManagement.score = 30
-    } else if (budgetRatio <= 0.95) {
-      // Slightly under budget (very good)
-      scoreData.categories.budgetManagement.score = 25
-    } else if (budgetRatio <= 1.0) {
-      // At budget (good)
-      scoreData.categories.budgetManagement.score = 20
-    } else if (budgetRatio <= 1.1) {
-      // Slightly over budget (acceptable)
-      scoreData.categories.budgetManagement.score = 15
-    } else if (budgetRatio <= 1.2) {
-      // Moderately over budget (poor)
-      scoreData.categories.budgetManagement.score = 10
-    } else {
-      // Significantly over budget (very poor)
-      scoreData.categories.budgetManagement.score = 5
-    }
-
-    // 2. Material Selection Score (25 points)
-    // Check if essential materials are included
-    const essentialMaterials = ["cement", "steel", "sand", "gravel", "wood", "tile", "paint"]
-    const selectedMaterialNames = materials.map((m) => m.material_name.toLowerCase())
-
-    let essentialCount = 0
-    essentialMaterials.forEach((material) => {
-      if (selectedMaterialNames.some((name) => name.includes(material))) {
-        essentialCount++
-      }
-    })
-
-    const essentialRatio = essentialCount / essentialMaterials.length
-    scoreData.categories.materialSelection.score = Math.round(essentialRatio * 25)
-
-    // 3. Cost Efficiency Score (25 points)
-    // Calculate cost per square meter and compare to industry standards
-    const costPerSqm = totalCost / (plan.floor_area || floorArea || 100)
-
-    // Industry standards (simplified for this example)
-    // These would typically vary by region and building type
-    const lowCostStandard = 15000 // PHP per sqm
-    const highCostStandard = 30000 // PHP per sqm
-
-    if (costPerSqm <= lowCostStandard) {
-      // Very efficient
-      scoreData.categories.costEfficiency.score = 25
-    } else if (costPerSqm <= (lowCostStandard + highCostStandard) / 2) {
-      // Moderately efficient
-      scoreData.categories.costEfficiency.score = 20
-    } else if (costPerSqm <= highCostStandard) {
-      // Standard efficiency
-      scoreData.categories.costEfficiency.score = 15
-    } else if (costPerSqm <= highCostStandard * 1.2) {
-      // Somewhat inefficient
-      scoreData.categories.costEfficiency.score = 10
-    } else {
-      // Very inefficient
-      scoreData.categories.costEfficiency.score = 5
-    }
-
-    // 4. Sustainability Score (20 points)
-    // Check for sustainable materials
-    const sustainableMaterials = ["bamboo", "recycled", "sustainable", "eco", "green"]
-    let sustainableCount = 0
-
-    selectedMaterialNames.forEach((name) => {
-      if (sustainableMaterials.some((sustainable) => name.includes(sustainable))) {
-        sustainableCount++
-      }
-    })
-
-    // Award points based on percentage of sustainable materials
-    const sustainableRatio = sustainableCount / (materials.length || 1)
-    scoreData.categories.sustainability.score = Math.min(20, Math.round(sustainableRatio * 40))
-
-    // Calculate overall score
-    scoreData.overallScore = Object.values(scoreData.categories).reduce((total, category) => total + category.score, 0)
-
-    return scoreData
-  }
-
-  // Generate educational feedback based on score
-  const generateEducationalFeedback = (scoreData) => {
-    const feedback = []
-
-    // Budget Management Feedback
-    if (scoreData.categories.budgetManagement.score >= 25) {
-      feedback.push("Excellent budget management! Your cost estimation demonstrates strong financial planning skills.")
-    } else if (scoreData.categories.budgetManagement.score >= 15) {
-      feedback.push("Acceptable budget management. Consider reviewing high-cost items to optimize your budget further.")
-    } else {
-      feedback.push(
-        "Your project is significantly over budget. In professional practice, this would require redesign or client approval for additional funding.",
-      )
-    }
-
-    // Material Selection Feedback
-    if (scoreData.categories.materialSelection.score >= 20) {
-      feedback.push("Your material selection is comprehensive and appropriate for this type of construction.")
-    } else if (scoreData.categories.materialSelection.score >= 10) {
-      feedback.push(
-        "Some essential materials may be missing or underrepresented in your estimate. Review structural and finishing requirements.",
-      )
-    } else {
-      feedback.push(
-        "Your material selection needs significant improvement. Many essential components are missing from your estimate.",
-      )
-    }
-
-    // Cost Efficiency Feedback
-    if (scoreData.categories.costEfficiency.score >= 20) {
-      feedback.push("Your cost per square meter is highly efficient, demonstrating good value engineering principles.")
-    } else if (scoreData.categories.costEfficiency.score >= 10) {
-      feedback.push("Your cost per square meter is within acceptable ranges but could be optimized further.")
-    } else {
-      feedback.push(
-        "Your cost per square meter is high compared to industry standards. Consider alternative materials or construction methods.",
-      )
-    }
-
-    // Sustainability Feedback
-    if (scoreData.categories.sustainability.score >= 15) {
-      feedback.push(
-        "Excellent incorporation of sustainable materials! This would qualify for green building certifications.",
-      )
-    } else if (scoreData.categories.sustainability.score >= 8) {
-      feedback.push(
-        "Some sustainable materials are included, but there's room to improve the environmental impact of your design.",
-      )
-    } else {
-      feedback.push(
-        "Consider incorporating more sustainable materials to reduce environmental impact and potentially reduce long-term costs.",
-      )
-    }
-
-    // Add educational context
-    feedback.push(
-      "In professional practice, architects typically aim for a 5-10% contingency buffer below the maximum budget.",
-    )
-    feedback.push(
-      "Material costs typically represent 60-70% of total construction costs, with labor making up most of the remainder.",
-    )
-
-    return feedback
-  }
-
-  // Complete the design plan and generate recommendations
-  const completeDesignPlan = (scoreData) => {
-    const recommendations = []
-
-    // Generate recommendations based on scores
-    if (scoreData.categories.budgetManagement.score < 20) {
-      recommendations.push("Review high-cost materials and consider alternatives or quantity reductions.")
-    }
-
-    if (scoreData.categories.materialSelection.score < 20) {
-      recommendations.push(
-        "Ensure all essential building components are included in your estimate (foundation, structure, roofing, finishes, etc).",
-      )
-    }
-
-    if (scoreData.categories.costEfficiency.score < 20) {
-      recommendations.push(
-        "Consider value engineering techniques to optimize cost per square meter without sacrificing quality.",
-      )
-    }
-
-    if (scoreData.categories.sustainability.score < 15) {
-      recommendations.push("Research locally available sustainable materials that could replace conventional options.")
-    }
-
-    // Add general educational recommendations
-    recommendations.push("Compare your estimate with similar projects to benchmark your cost estimation accuracy.")
-    recommendations.push(
-      "Consider life-cycle costs, not just initial construction costs, for a more comprehensive analysis.",
-    )
-
-    return {
-      completed: true,
-      recommendations,
-    }
-  }
-
-  // Show completion dialog with score and feedback
-  const showCompletionDialog = (scoreData, feedback, recommendations) => {
+  // Enhanced completion dialog with comprehensive feedback
+  const showCompletionDialog = (scoreData) => {
     // Create a formatted message for the alert
-    const scoreMessage = `Your Design Plan Score: ${scoreData.overallScore}/100\n\n`
+    const scoreMessage = `Your Design Plan Score: ${scoreData.overallScore}/100 (${scoreData.letterGrade})\n\n`
 
     const breakdownMessage = Object.entries(scoreData.categories)
-      .map(([key, data]) => `${data.description}: ${data.score}/${data.maxScore}`)
+      .map(([key, data]) => `${EDUCATIONAL_RUBRICS[key]?.name}: ${data.score}/${data.maxScore} (${data.level})`)
       .join("\n")
 
     // Show the completion alert
     Alert.alert("Design Plan Completed!", `${scoreMessage}${breakdownMessage}`, [
       {
         text: "View Detailed Feedback",
-        onPress: () => showDetailedFeedback(scoreData, feedback, recommendations),
+        onPress: () => showDetailedFeedback(scoreData),
       },
       {
         text: "OK",
@@ -954,14 +1385,14 @@ const DesignPlanDetails = ({ route, navigation }) => {
   }
 
   // Show detailed feedback in a modal
-  const showDetailedFeedback = (scoreData, feedback, recommendations) => {
-    // Create a state for the feedback modal
-    setFeedbackData({
-      score: scoreData,
-      feedback,
-      recommendations,
-    })
+  const showDetailedFeedback = (scoreData) => {
+    setFeedbackData(scoreData)
     setIsFeedbackModalVisible(true)
+  }
+
+  // Show rubric information
+  const showRubricInfo = () => {
+    setShowRubricModal(true)
   }
 
   // Get budget status
@@ -1042,7 +1473,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
     </View>
   )
 
-  // Feedback Modal
+  // Enhanced Feedback Modal with comprehensive scoring details
   const renderFeedbackModal = () => (
     <Modal
       visible={isFeedbackModalVisible}
@@ -1051,68 +1482,130 @@ const DesignPlanDetails = ({ route, navigation }) => {
       onRequestClose={() => setIsFeedbackModalVisible(false)}
     >
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { maxHeight: height * 0.8 }]}>
+        <View style={[styles.modalContent, { maxHeight: Dimensions.get("window").height * 0.9 }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Design Plan Assessment</Text>
+            <Text style={styles.modalTitle}>Educational Assessment</Text>
             <TouchableOpacity onPress={() => setIsFeedbackModalVisible(false)} style={styles.modalCloseButton}>
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ flex: 1 }}>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
             {feedbackData && (
               <>
+                {/* Overall Score Section */}
                 <View style={styles.scoreSection}>
-                  <Text style={styles.scoreSectionTitle}>Overall Score</Text>
-                  <View style={styles.scoreCircle}>
-                    <Text style={styles.scoreValue}>{feedbackData.score.overallScore}</Text>
-                    <Text style={styles.scoreMax}>/100</Text>
+                  <Text style={styles.scoreSectionTitle}>Overall Performance</Text>
+                  <View style={styles.scoreDisplay}>
+                    <View style={styles.scoreCircle}>
+                      <Text style={styles.scoreValue}>{feedbackData.overallScore}</Text>
+                      <Text style={styles.scoreMax}>/100</Text>
+                    </View>
+                    <View style={styles.gradeInfo}>
+                      <View
+                        style={[
+                          styles.gradeBadge,
+                          {
+                            backgroundColor:
+                              feedbackData.letterGrade === "A"
+                                ? "#4CAF50"
+                                : feedbackData.letterGrade === "B"
+                                  ? "#8BC34A"
+                                  : feedbackData.letterGrade === "C"
+                                    ? "#FFC107"
+                                    : feedbackData.letterGrade === "D"
+                                      ? "#FF9800"
+                                      : "#F44336",
+                          },
+                        ]}
+                      >
+                        <Text style={styles.gradeText}>{feedbackData.letterGrade}</Text>
+                      </View>
+                      {classAnalytics && (
+                        <Text style={styles.classComparison}>
+                          Class Average: {classAnalytics.average_score?.toFixed(1) || "N/A"}
+                        </Text>
+                      )}
+                    </View>
                   </View>
                 </View>
 
+                {/* Category Breakdown */}
                 <View style={styles.scoreBreakdownSection}>
-                  <Text style={styles.scoreSectionTitle}>Score Breakdown</Text>
-                  {Object.entries(feedbackData.score.categories).map(([key, data], index) => (
-                    <View key={index} style={styles.scoreBreakdownItem}>
-                      <View style={styles.scoreBreakdownHeader}>
-                        <Text style={styles.scoreBreakdownTitle}>{data.description}</Text>
-                        <Text style={styles.scoreBreakdownValue}>
-                          {data.score}/{data.maxScore}
-                        </Text>
+                  <Text style={styles.scoreSectionTitle}>Category Performance</Text>
+                  {Object.entries(feedbackData.categories).map(([key, data], index) => (
+                    <View key={index} style={styles.categoryCard}>
+                      <View style={styles.categoryHeader}>
+                        <Text style={styles.categoryTitle}>{EDUCATIONAL_RUBRICS[key]?.name}</Text>
+                        <View style={styles.categoryScoreContainer}>
+                          <Text style={styles.categoryScore}>
+                            {data.score}/{data.maxScore}
+                          </Text>
+                          <Text style={styles.categoryLevel}>{data.level}</Text>
+                        </View>
                       </View>
-                      <View style={styles.scoreProgressContainer}>
+                      <View style={styles.categoryProgressContainer}>
                         <View
                           style={[
-                            styles.scoreProgress,
+                            styles.categoryProgress,
                             { width: `${(data.score / data.maxScore) * 100}%` },
-                            data.score / data.maxScore < 0.4
-                              ? styles.scoreProgressLow
-                              : data.score / data.maxScore < 0.7
-                                ? styles.scoreProgressMedium
-                                : styles.scoreProgressHigh,
+                            data.score / data.maxScore >= 0.8
+                              ? styles.progressHigh
+                              : data.score / data.maxScore >= 0.6
+                                ? styles.progressMedium
+                                : styles.progressLow,
                           ]}
                         />
                       </View>
+                      <Text style={styles.categoryFeedback}>{data.feedback}</Text>
                     </View>
                   ))}
                 </View>
 
-                <View style={styles.feedbackSection}>
-                  <Text style={styles.scoreSectionTitle}>Educational Feedback</Text>
-                  {feedbackData.feedback.map((item, index) => (
-                    <View key={index} style={styles.feedbackItem}>
+                {/* Strengths */}
+                {feedbackData.strengths && feedbackData.strengths.length > 0 && (
+                  <View style={styles.strengthsSection}>
+                    <Text style={styles.scoreSectionTitle}>Your Strengths</Text>
+                    {feedbackData.strengths.map((strength, index) => (
+                      <View key={index} style={styles.strengthItem}>
+                        <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                        <Text style={styles.strengthText}>{strength}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Areas for Improvement */}
+                {feedbackData.areasForImprovement && feedbackData.areasForImprovement.length > 0 && (
+                  <View style={styles.improvementSection}>
+                    <Text style={styles.scoreSectionTitle}>Areas for Improvement</Text>
+                    {feedbackData.areasForImprovement.map((area, index) => (
+                      <View key={index} style={styles.improvementItem}>
+                        <Ionicons name="alert-circle" size={20} color="#FF9800" />
+                        <Text style={styles.improvementText}>{area}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Educational Feedback */}
+                <View style={styles.educationalSection}>
+                  <Text style={styles.scoreSectionTitle}>Educational Insights</Text>
+                  {feedbackData.educationalFeedback.map((insight, index) => (
+                    <View key={index} style={styles.insightItem}>
                       <Ionicons name="school-outline" size={20} color="#176BB7" />
-                      <Text style={styles.feedbackText}>{item}</Text>
+                      <Text style={styles.insightText}>{insight}</Text>
                     </View>
                   ))}
                 </View>
 
+                {/* Recommendations */}
                 <View style={styles.recommendationsSection}>
                   <Text style={styles.scoreSectionTitle}>Recommendations</Text>
-                  {feedbackData.recommendations.map((item, index) => (
+                  {feedbackData.recommendations.map((recommendation, index) => (
                     <View key={index} style={styles.recommendationItem}>
                       <Ionicons name="bulb-outline" size={20} color="#FFB347" />
-                      <Text style={styles.recommendationText}>{item}</Text>
+                      <Text style={styles.recommendationText}>{recommendation}</Text>
                     </View>
                   ))}
                 </View>
@@ -1128,7 +1621,51 @@ const DesignPlanDetails = ({ route, navigation }) => {
     </Modal>
   )
 
-  const { height } = Dimensions.get("window")
+  // Rubric Information Modal
+  const renderRubricModal = () => (
+    <Modal
+      visible={showRubricModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowRubricModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { maxHeight: Dimensions.get("window").height * 0.9 }]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Scoring Rubric</Text>
+            <TouchableOpacity onPress={() => setShowRubricModal(false)} style={styles.modalCloseButton}>
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+            {Object.entries(EDUCATIONAL_RUBRICS).map(([key, rubric], index) => (
+              <View key={index} style={styles.rubricCategory}>
+                <Text style={styles.rubricCategoryTitle}>
+                  {rubric.name} ({rubric.maxScore} points)
+                </Text>
+                {rubric.criteria.map((criterion, criterionIndex) => (
+                  <View key={criterionIndex} style={styles.rubricCriterion}>
+                    <View style={styles.rubricCriterionHeader}>
+                      <Text style={styles.rubricLevel}>{criterion.level}</Text>
+                      <Text style={styles.rubricRange}>
+                        {criterion.scoreRange[0]}-{criterion.scoreRange[1]} pts
+                      </Text>
+                    </View>
+                    <Text style={styles.rubricDescription}>{criterion.description}</Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </ScrollView>
+
+          <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowRubricModal(false)}>
+            <Text style={styles.closeModalButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
 
   // Render material item
   const renderMaterialItem = ({ item, index }) => (
@@ -1194,7 +1731,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.modalSubtitle}>Give this estimate a name to save it for later</Text>
+          <Text style={styles.modalSubtitle}>Give this estimate a name and receive your educational assessment</Text>
 
           <TextInput
             style={styles.estimateNameInput}
@@ -1213,6 +1750,22 @@ const DesignPlanDetails = ({ route, navigation }) => {
               <Text style={styles.estimateSummaryLabel}>Total Estimated Cost:</Text>
               <Text style={styles.estimateSummaryValue}>{formatCurrency(totalEstimatedCost, currency)}</Text>
             </View>
+            <View style={styles.estimateSummaryRow}>
+              <Text style={styles.estimateSummaryLabel}>Budget Utilization:</Text>
+              <Text style={styles.estimateSummaryValue}>{((totalEstimatedCost / budget) * 100).toFixed(1)}%</Text>
+            </View>
+          </View>
+
+          <View style={styles.scoringInfo}>
+            <Text style={styles.scoringInfoTitle}>Educational Assessment</Text>
+            <Text style={styles.scoringInfoText}>
+              Your work will be evaluated on budget management, material selection, cost efficiency, sustainability, and
+              technical accuracy.
+            </Text>
+            <TouchableOpacity style={styles.viewRubricButton} onPress={showRubricInfo}>
+              <Ionicons name="information-circle-outline" size={16} color="#176BB7" />
+              <Text style={styles.viewRubricText}>View Scoring Rubric</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -1220,12 +1773,39 @@ const DesignPlanDetails = ({ route, navigation }) => {
             onPress={saveEstimate}
             disabled={isSaving}
           >
-            <Text style={styles.saveEstimateButtonText}>{isSaving ? "Saving..." : "Save Estimate"}</Text>
+            <Text style={styles.saveEstimateButtonText}>
+              {isSaving ? "Saving & Calculating Score..." : "Save & Get Assessment"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
   )
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#176BB7" />
+          <Text style={styles.loadingText}>Loading design plan...</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => window.location.reload()}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1235,6 +1815,9 @@ const DesignPlanDetails = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Cost Estimation</Text>
+        <TouchableOpacity onPress={showRubricInfo} style={styles.rubricButton}>
+          <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView}>
@@ -1248,10 +1831,37 @@ const DesignPlanDetails = ({ route, navigation }) => {
               {planDetails?.description || "No description available for this design plan."}
             </Text>
 
-            {floorArea > 0 && (
-              <View style={styles.floorAreaBadge}>
-                <Ionicons name="grid-outline" size={16} color="#1E4F91" />
-                <Text style={styles.floorAreaText}>Floor Area: {floorArea} sq.m</Text>
+            <View style={styles.planMetadata}>
+              {floorArea > 0 && (
+                <View style={styles.metadataBadge}>
+                  <Ionicons name="resize-outline" size={16} color="#1E4F91" />
+                  <Text style={styles.metadataText}>Area: {floorArea} sq.m</Text>
+                </View>
+              )}
+              {planDetails?.difficulty_level && (
+                <View style={styles.metadataBadge}>
+                  <Ionicons name="school-outline" size={16} color="#1E4F91" />
+                  <Text style={styles.metadataText}>Level: {planDetails.difficulty_level}</Text>
+                </View>
+              )}
+              {planDetails?.estimated_duration && (
+                <View style={styles.metadataBadge}>
+                  <Ionicons name="time-outline" size={16} color="#1E4F91" />
+                  <Text style={styles.metadataText}>Duration: {planDetails.estimated_duration} min</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Learning Objectives */}
+            {planDetails?.learning_objectives && planDetails.learning_objectives.length > 0 && (
+              <View style={styles.objectivesSection}>
+                <Text style={styles.objectivesTitle}>Learning Objectives</Text>
+                {planDetails.learning_objectives.map((objective, index) => (
+                  <View key={index} style={styles.objectiveItem}>
+                    <Ionicons name="checkmark-circle-outline" size={16} color="#4CAF50" />
+                    <Text style={styles.objectiveText}>{objective}</Text>
+                  </View>
+                ))}
               </View>
             )}
           </View>
@@ -1407,6 +2017,16 @@ const DesignPlanDetails = ({ route, navigation }) => {
               <>
                 <View style={styles.materialFilterContainer}>
                   <Text style={styles.selectedCountText}>{selectedMaterials.length} materials selected</Text>
+                  <TouchableOpacity
+                    style={styles.clearSelectionButton}
+                    onPress={() => {
+                      const clearedMaterials = materials.map((m) => ({ ...m, isSelected: false, quantity: 0 }))
+                      setMaterials(clearedMaterials)
+                      setSelectedMaterials([])
+                    }}
+                  >
+                    <Text style={styles.clearSelectionText}>Clear All</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <FlatList
@@ -1426,48 +2046,48 @@ const DesignPlanDetails = ({ route, navigation }) => {
           </View>
 
           {/* Selected Materials Summary */}
-          {selectedMaterials.length > 0 && (
-            <View style={styles.summarySection}>
-              <Text style={styles.sectionTitle}>Materials Summary</Text>
+          <View style={styles.summarySection}>
+            <Text style={styles.sectionTitle}>Materials Summary</Text>
 
-              <View style={styles.summaryTable}>
-                <View style={styles.summaryTableHeader}>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Material</Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>Qty</Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>Price</Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>Total</Text>
-                </View>
+            <View style={styles.summaryTable}>
+              <View style={styles.summaryTableHeader}>
+                <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Material</Text>
+                <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>Qty</Text>
+                <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>Price</Text>
+                <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>Total</Text>
+                <Text style={[styles.summaryTableCell, styles.summaryTableCategory]}>Category</Text>
+              </View>
 
-                {selectedMaterials.map((material, index) => (
-                  <View key={index} style={styles.summaryTableRow}>
-                    <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]} numberOfLines={1}>
-                      {material.material_name}
-                    </Text>
-                    <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>{material.quantity}</Text>
-                    <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>
-                      {formatCurrency(material.price, currency)}
-                    </Text>
-                    <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>
-                      {formatCurrency(material.price * material.quantity, currency)}
-                    </Text>
-                  </View>
-                ))}
-
-                <View style={styles.summaryTableFooter}>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Total Estimated Cost</Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableTotal, styles.summaryTableTotalValue]}>
-                    {formatCurrency(totalEstimatedCost, currency)}
+              {selectedMaterials.map((material, index) => (
+                <View key={index} style={styles.summaryTableRow}>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]} numberOfLines={1}>
+                    {material.material_name}
                   </Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>{material.quantity}</Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>
+                    {formatCurrency(material.price, currency)}
+                  </Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>
+                    {formatCurrency(material.price * material.quantity, currency)}
+                  </Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableCategory]}>{material.category || "—"}</Text>
                 </View>
+              ))}
+
+              <View style={styles.summaryTableFooter}>
+                <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Total Estimated Cost</Text>
+                <Text style={[styles.summaryTableCell, styles.summaryTableTotal, styles.summaryTableTotalValue]}>
+                  {formatCurrency(totalEstimatedCost, currency)}
+                </Text>
               </View>
             </View>
-          )}
+          </View>
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             {selectedMaterials.length > 0 && (
               <TouchableOpacity style={styles.primaryButton} onPress={() => setIsEstimateModalVisible(true)}>
-                <Text style={styles.primaryButtonText}>Save Cost Estimate</Text>
+                <Text style={styles.primaryButtonText}>Save Cost Estimate & Get Score</Text>
               </TouchableOpacity>
             )}
 
@@ -1483,14 +2103,10 @@ const DesignPlanDetails = ({ route, navigation }) => {
         </View>
       </ScrollView>
 
+      {/* Modals and Image Viewer */}
       {renderSaveEstimateModal()}
-      <ImageViewing
-        images={[{ uri: designImage }]}
-        imageIndex={0}
-        visible={isImageModalVisible}
-        onRequestClose={() => setIsImageModalVisible(false)}
-      />
-
+      {renderFeedbackModal()}
+      {renderRubricModal()}
       <ImageViewing
         images={[{ uri: designImage }]}
         imageIndex={0}
@@ -1498,7 +2114,6 @@ const DesignPlanDetails = ({ route, navigation }) => {
         onRequestClose={() => setIsImageModalVisible(false)}
         swipeToCloseEnabled={true}
       />
-      {renderFeedbackModal()}
     </SafeAreaView>
   )
 }
@@ -1514,12 +2129,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#EEF5FF",
   },
+  loadingText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 12,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#176BB7",
     height: 60,
     paddingHorizontal: 16,
+    justifyContent: "space-between",
   },
   backButton: {
     padding: 8,
@@ -1528,7 +2149,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
+    flex: 1,
     marginLeft: 16,
+  },
+  rubricButton: {
+    padding: 8,
   },
   scrollView: {
     flex: 1,
@@ -1559,19 +2184,49 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 12,
   },
-  floorAreaBadge: {
+  planMetadata: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  metadataBadge: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#EEF5FF",
-    alignSelf: "flex-start",
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 16,
   },
-  floorAreaText: {
-    fontSize: 14,
+  metadataText: {
+    fontSize: 12,
     color: "#1E4F91",
     marginLeft: 4,
+  },
+  objectivesSection: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: "#F8FAFF",
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  objectivesTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1E4F91",
+    marginBottom: 8,
+  },
+  objectiveItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
+  objectiveText: {
+    fontSize: 13,
+    color: "#333",
+    marginLeft: 8,
+    flex: 1,
   },
   budgetCard: {
     backgroundColor: "#FFFFFF",
@@ -1715,18 +2370,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#4CAF50",
   },
-  budgetButton: {
-    borderWidth: 1,
-    borderColor: "#1E4F91",
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  budgetButtonText: {
-    color: "#1E4F91",
-    fontWeight: "600",
-    fontSize: 14,
-  },
   fileSection: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1751,25 +2394,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-  fileButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EEF5FF",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  fileButtonText: {
-    color: "#176BB7",
-    fontWeight: "600",
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  fileUrl: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 8,
-  },
   materialsSection: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1786,11 +2410,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  loadingText: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 8,
-  },
   materialFilterContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1800,6 +2419,17 @@ const styles = StyleSheet.create({
   selectedCountText: {
     fontSize: 14,
     color: "#666",
+  },
+  clearSelectionButton: {
+    backgroundColor: "#FFE0E0",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  clearSelectionText: {
+    fontSize: 12,
+    color: "#FF6B6B",
+    fontWeight: "600",
   },
   materialsList: {
     paddingBottom: 8,
@@ -1898,19 +2528,6 @@ const styles = StyleSheet.create({
   materialUnit: {
     fontSize: 14,
     color: "#666",
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EEF5FF",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
-  addButtonText: {
-    fontSize: 14,
-    color: "#176BB7",
-    marginLeft: 4,
   },
   emptyState: {
     alignItems: "center",
@@ -2049,11 +2666,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 8,
   },
-  retryButtonText: {
-    color: "#1E4F91",
-    fontWeight: "600",
-    fontSize: 14,
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -2123,6 +2735,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
   },
+  scoringInfo: {
+    backgroundColor: "#E8F0FC",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  scoringInfoTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1E4F91",
+    marginBottom: 8,
+  },
+  scoringInfoText: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  viewRubricButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  viewRubricText: {
+    fontSize: 13,
+    color: "#176BB7",
+    fontWeight: "600",
+    marginLeft: 4,
+  },
   saveEstimateButton: {
     backgroundColor: "#176BB7",
     borderRadius: 8,
@@ -2152,13 +2792,6 @@ const styles = StyleSheet.create({
   progressTrackingContent: {
     marginTop: 16,
     marginBottom: 20,
-  },
-  progressBarContainer: {
-    height: 24,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 12,
-    overflow: "hidden",
-    marginBottom: 15,
   },
   progressFill: {
     height: "100%",
@@ -2258,7 +2891,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Feedback modal styles
+  // Enhanced feedback modal styles
   scoreSection: {
     alignItems: "center",
     marginBottom: 20,
@@ -2272,6 +2905,11 @@ const styles = StyleSheet.create({
     color: "#1E4F91",
     marginBottom: 12,
   },
+  scoreDisplay: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
+  },
   scoreCircle: {
     width: 100,
     height: 100,
@@ -2279,7 +2917,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#176BB7",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 8,
   },
   scoreValue: {
     fontSize: 32,
@@ -2291,56 +2928,142 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     opacity: 0.8,
   },
+  gradeInfo: {
+    alignItems: "center",
+  },
+  gradeBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  gradeText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  classComparison: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "center",
+  },
   scoreBreakdownSection: {
     marginBottom: 20,
   },
-  scoreBreakdownItem: {
+  categoryCard: {
+    backgroundColor: "#F8FAFF",
+    borderRadius: 8,
+    padding: 12,
     marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#176BB7",
   },
-  scoreBreakdownHeader: {
+  categoryHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 4,
+    alignItems: "center",
+    marginBottom: 8,
   },
-  scoreBreakdownTitle: {
-    fontSize: 14,
-    color: "#333",
-  },
-  scoreBreakdownValue: {
+  categoryTitle: {
     fontSize: 14,
     fontWeight: "600",
+    color: "#333",
+    flex: 1,
+  },
+  categoryScoreContainer: {
+    alignItems: "flex-end",
+  },
+  categoryScore: {
+    fontSize: 16,
+    fontWeight: "bold",
     color: "#176BB7",
   },
-  scoreProgressContainer: {
-    height: 8,
+  categoryLevel: {
+    fontSize: 12,
+    color: "#666",
+    textTransform: "uppercase",
+  },
+  categoryProgressContainer: {
+    color: "#176BB7",
+  },
+  categoryLevel: {
+    fontSize: 12,
+    color: "#666",
+    textTransform: "uppercase",
+  },
+  categoryProgressContainer: {
+    height: 6,
     backgroundColor: "#E0E0E0",
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: "hidden",
+    marginBottom: 8,
   },
-  scoreProgress: {
+  categoryProgress: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: 3,
   },
-  scoreProgressLow: {
-    backgroundColor: "#FF6B6B",
-  },
-  scoreProgressMedium: {
-    backgroundColor: "#FFB347",
-  },
-  scoreProgressHigh: {
+  progressHigh: {
     backgroundColor: "#4CAF50",
   },
-  feedbackSection: {
+  progressMedium: {
+    backgroundColor: "#FFB347",
+  },
+  progressLow: {
+    backgroundColor: "#FF6B6B",
+  },
+  categoryFeedback: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
+  },
+  strengthsSection: {
     marginBottom: 20,
   },
-  feedbackItem: {
+  strengthItem: {
     flexDirection: "row",
-    backgroundColor: "#F8FAFF",
+    alignItems: "flex-start",
+    backgroundColor: "#E8F5E8",
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
   },
-  feedbackText: {
+  strengthText: {
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+    marginLeft: 12,
+  },
+  improvementSection: {
+    marginBottom: 20,
+  },
+  improvementItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#FFF3E0",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  improvementText: {
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+    marginLeft: 12,
+  },
+  educationalSection: {
+    marginBottom: 20,
+  },
+  insightItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#F0F7FF",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  insightText: {
     fontSize: 14,
     color: "#333",
     flex: 1,
@@ -2351,6 +3074,7 @@ const styles = StyleSheet.create({
   },
   recommendationItem: {
     flexDirection: "row",
+    alignItems: "flex-start",
     backgroundColor: "#FFF8E1",
     padding: 12,
     borderRadius: 8,
@@ -2373,6 +3097,57 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 16,
+  },
+
+  // Rubric modal styles
+  rubricCategory: {
+    marginBottom: 20,
+    backgroundColor: "#F8FAFF",
+    borderRadius: 8,
+    padding: 12,
+  },
+  rubricCategoryTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1E4F91",
+    marginBottom: 12,
+  },
+  rubricCriterion: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: "#B4D4FF",
+  },
+  rubricCriterionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  rubricLevel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#176BB7",
+  },
+  rubricRange: {
+    fontSize: 12,
+    color: "#666",
+    backgroundColor: "#EEF5FF",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  rubricDescription: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
+  },
+
+  summaryTableCategory: {
+    flex: 1.2,
+    textAlign: "right",
   },
 })
 
