@@ -1,17 +1,33 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ ADD THIS
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Createdesignplan.css';
 import Sidebar from './Sidebar';
-import { FaEdit, FaTrash } from 'react-icons/fa'; 
+import { FaEdit, FaTrash } from 'react-icons/fa';
+import { supabase } from '../../supabaseClient';
 
 function Createdesignplan() {
-  const [designs, setDesigns] = useState([
-    { name: 'DESIGN EXAMPLE', date: '04 - 27 - 2025' },
-    { name: 'DESIGN EXAMPLE 2', date: '04 - 27 - 2025' },
-  ]);
+  const [designs, setDesigns] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newDesignName, setNewDesignName] = useState('');
-  const navigate = useNavigate(); // ✅
+  const navigate = useNavigate();
+
+  // ✅ Fetch from Supabase on load
+  useEffect(() => {
+    const fetchDesigns = async () => {
+      const { data, error } = await supabase
+        .from('design_plan')
+        .select('id, plan_name, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching design plans:', error);
+      } else {
+        setDesigns(data);
+      }
+    };
+
+    fetchDesigns();
+  }, []);
 
   const openModal = () => setShowModal(true);
   const closeModal = () => {
@@ -24,35 +40,29 @@ function Createdesignplan() {
       alert('Please enter a design name.');
       return;
     }
-    const today = new Date();
-    const formattedDate = `${String(today.getMonth() + 1).padStart(2, '0')} - ${String(today.getDate()).padStart(2, '0')} - ${today.getFullYear()}`;
-    const newDesign = { name: newDesignName.toUpperCase(), date: formattedDate };
-    
-    setDesigns([...designs, newDesign]);
+
+    sessionStorage.setItem('new_design_name', newDesignName.toUpperCase());
     closeModal();
-
-    // ✅ After creating, auto-redirect to CreateWork
-    navigate('/creatework');
+    navigate('/createdesign');
   };
 
-  const handleDesignClick = (designName) => {
-    console.log(`Clicked on design: ${designName}`);
-    // For now just console log; future we can redirect if needed
+  const handleDesignClick = (id) => {
+    navigate(`/createdesign/${id}`); // ✅ Navigates to the correct dynamic route
+ 
   };
 
-  const handleEditDesign = (index) => {
-    const newName = prompt('Enter new design name:', designs[index].name);
-    if (newName && newName.trim() !== '') {
-      const updatedDesigns = [...designs];
-      updatedDesigns[index].name = newName.toUpperCase();
-      setDesigns(updatedDesigns);
-    }
+  const handleEditDesign = (id) => {
+    alert('Edit functionality coming soon for design ID: ' + id);
   };
 
-  const handleDeleteDesign = (index) => {
-    if (window.confirm('Are you sure you want to delete this design?')) {
-      const updatedDesigns = designs.filter((_, i) => i !== index);
-      setDesigns(updatedDesigns);
+  const handleDeleteDesign = async (id) => {
+    if (window.confirm('Are you sure you want to delete this design plan?')) {
+      const { error } = await supabase.from('design_plan').delete().eq('id', id);
+      if (error) {
+        console.error('Failed to delete:', error);
+      } else {
+        setDesigns(designs.filter((d) => d.id !== id));
+      }
     }
   };
 
@@ -77,28 +87,34 @@ function Createdesignplan() {
               <tr>
                 <th>Design Name</th>
                 <th>Date Created</th>
-                <th>Actions</th> 
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {designs.map((design, index) => (
-                <tr key={index} className="clickable-row">
-                  <td onClick={() => handleDesignClick(design.name)}>
-                    {index + 1}. {design.name}
-                  </td>
-                  <td onClick={() => handleDesignClick(design.name)}>
-                    {design.date}
-                  </td>
-                  <td className="createdesign-action-buttons">
-                    <button className="createdesign-action-btn" onClick={() => handleEditDesign(index)}>
-                      <FaEdit />
-                    </button>
-                    <button className="createdesign-action-btn delete-btn" onClick={() => handleDeleteDesign(index)}>
-                      <FaTrash />
-                    </button>
-                  </td>
+              {designs.length === 0 ? (
+                <tr>
+                  <td colSpan="3">No design plans yet.</td>
                 </tr>
-              ))}
+              ) : (
+                designs.map((design, index) => (
+                  <tr key={design.id} className="clickable-row">
+                    <td onClick={() => handleDesignClick(design.id)}>
+                      {index + 1}. {design.plan_name}
+                    </td>
+                    <td onClick={() => handleDesignClick(design.id)}>
+                      {new Date(design.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="createdesign-action-buttons">
+                      <button className="createdesign-action-btn" onClick={() => handleEditDesign(design.id)}>
+                        <FaEdit />
+                      </button>
+                      <button className="createdesign-action-btn delete-btn" onClick={() => handleDeleteDesign(design.id)}>
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

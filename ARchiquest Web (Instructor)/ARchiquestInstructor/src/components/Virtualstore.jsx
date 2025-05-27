@@ -10,14 +10,17 @@ function VirtualStore() {
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedPrice, setSelectedPrice] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [teacherId, setTeacherId] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
   const [newMaterial, setNewMaterial] = useState({
     material_name: '',
     description: '',
     price: '',
     unit: '',
+    category: '',
   });
-  const [teacherId, setTeacherId] = useState('');
-
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -30,14 +33,13 @@ function VirtualStore() {
     };
     fetchSession();
   }, []);
-  
+
   useEffect(() => {
     if (teacherId) {
       fetchMaterials(teacherId);
     }
   }, [teacherId]);
 
-  // 📦 Fetch materials from DB
   const fetchMaterials = async (teacher_id) => {
     const { data, error } = await supabase
       .from('materials')
@@ -56,10 +58,23 @@ function VirtualStore() {
   const handlePriceChange = (e) => setSelectedPrice(e.target.value);
 
   const openAddModal = () => {
-    setNewMaterial({ material_name: '', description: '', price: '', unit: '' });
+    setNewMaterial({
+      material_name: '',
+      description: '',
+      price: '',
+      unit: '',
+      category: '',
+    });
+    setIsEditing(false);
+    setEditingId(null);
     setShowAddModal(true);
   };
-  const closeAddModal = () => setShowAddModal(false);
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setIsEditing(false);
+    setEditingId(null);
+  };
 
   const handleNewMaterialChange = (e) => {
     const { name, value } = e.target;
@@ -67,9 +82,9 @@ function VirtualStore() {
   };
 
   const handleAddMaterial = async () => {
-    const { material_name, description, price, unit } = newMaterial;
+    const { material_name, description, price, unit, category } = newMaterial;
 
-    if (!material_name || !description || !price || !unit) {
+    if (!material_name || !description || !price || !unit || !category) {
       alert('⚠️ Please fill in all fields.');
       return;
     }
@@ -80,6 +95,7 @@ function VirtualStore() {
         description,
         price: parseFloat(price),
         unit,
+        category,
         teacher_id: teacherId,
       }
     ]);
@@ -94,12 +110,89 @@ function VirtualStore() {
     }
   };
 
+  const handleEditClick = (material) => {
+    setNewMaterial({
+      material_name: material.material_name,
+      description: material.description,
+      price: material.price,
+      unit: material.unit,
+      category: material.category,
+    });
+    setEditingId(material.id);
+    console.log("Editing ID:", editingId);
+    setIsEditing(true);
+    setShowAddModal(true);
+  };
+
+  const handleUpdateMaterial = async () => {
+    const { material_name, description, price, unit, category } = newMaterial;
+
+    const { error } = await supabase
+      .from('materials')
+      .update({
+        material_name,
+        description,
+        price: parseFloat(price),
+        unit,
+        category
+      })
+      .eq('id', editingId);
+
+    if (error) {
+      console.error('❌ Error updating material:', error.message);
+      alert('❌ Failed to update material.');
+    } else {
+      alert('✅ Material updated!');
+      console.log("Editing material with ID:", material.id);
+      setMaterials((prevMaterials) =>
+      prevMaterials.map((mat) =>
+        mat.id === editingId
+          ? {
+              ...mat,
+              material_name,
+              description,
+              price: parseFloat(price),
+              unit,
+              category,
+            }
+          : mat
+      )
+    );
+    closeAddModal();
+
+      
+    }
+  };
+
+const handleDeleteMaterial = async (id) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this material?");
+  if (!confirmDelete) return;
+
+  console.log("Trying to delete material with ID:", id);
+
+  const { error } = await supabase
+    .from('materials')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('❌ Error deleting material:', error.message);
+    alert('❌ Error deleting material.');
+  } else {
+    alert('🗑️ Material deleted!');
+    setMaterials((prev) => prev.filter((mat) => mat.id !== id));
+  }
+};
+
+
+
   const filteredMaterials = materials.filter((material) => {
     const matchesSearch =
       material.material_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       material.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = selectedCategory === 'All Categories' || material.unit === selectedCategory;
+    const matchesCategory =
+      selectedCategory === 'All Categories' || material.category === selectedCategory;
 
     const matchesPrice =
       selectedPrice === 'All' ||
@@ -109,6 +202,12 @@ function VirtualStore() {
 
     return matchesSearch && matchesCategory && matchesPrice;
   });
+
+  const groupedMaterials = filteredMaterials.reduce((acc, mat) => {
+    if (!acc[mat.category]) acc[mat.category] = [];
+    acc[mat.category].push(mat);
+    return acc;
+  }, {});
 
   return (
     <div className="virtualstore-wrapper">
@@ -137,7 +236,7 @@ function VirtualStore() {
             <option>$5 - $10</option>
             <option>Above $10</option>
           </select>
-          <button onClick={openAddModal}>Add Material</button>
+          <button className="virtualstore-add-btn" onClick={openAddModal}>Add Material</button>
         </div>
 
         <div className="virtualstore-table-container">
@@ -152,17 +251,24 @@ function VirtualStore() {
               </tr>
             </thead>
             <tbody>
-              {filteredMaterials.map((material) => (
-                <tr key={material.id}>
-                  <td>🧱 {material.material_name}</td>
-                  <td>{material.description}</td>
-                  <td>${material.price.toFixed(2)}</td>
-                  <td>{material.unit}</td>
-                  <td>
-                    <button className="virtualstore-action-btn"><FaEdit /></button>
-                    <button className="virtualstore-action-btn delete-btn"><FaTrash /></button>
-                  </td>
-                </tr>
+              {Object.entries(groupedMaterials).map(([category, materialsInCategory]) => (
+                <React.Fragment key={category}>
+                  <tr>
+                    <td colSpan="5" style={{ backgroundColor: '#f0f0f0', fontWeight: 'bold' }}>{category}</td>
+                  </tr>
+                  {materialsInCategory.map((material) => (
+                    <tr key={material.id}>
+                      <td>🧱 {material.material_name}</td>
+                      <td>{material.description}</td>
+                      <td>${material.price.toFixed(2)}</td>
+                      <td>{material.unit}</td>
+                      <td>
+                        <button className="virtualstore-action-btn" onClick={() => handleEditClick(material)}><FaEdit /></button>
+                        <button className="virtualstore-action-btn delete-btn" onClick={() => handleDeleteMaterial(material.id)}><FaTrash /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -171,14 +277,26 @@ function VirtualStore() {
         {showAddModal && (
           <div className="virtualstore-blur-background">
             <div className="virtualstore-modal-card">
-              <h2>Add New Material</h2>
+              <h2>{isEditing ? "Edit Material" : "Add New Material"}</h2>
               <input type="text" name="material_name" placeholder="Material Name" value={newMaterial.material_name} onChange={handleNewMaterialChange} />
               <input type="text" name="description" placeholder="Description" value={newMaterial.description} onChange={handleNewMaterialChange} />
               <input type="number" name="price" placeholder="Price" value={newMaterial.price} onChange={handleNewMaterialChange} />
               <input type="text" name="unit" placeholder="Use Case" value={newMaterial.unit} onChange={handleNewMaterialChange} />
+              <select name="category" value={newMaterial.category} onChange={handleNewMaterialChange}>
+                <option value="">Select Category</option>
+                <option value="Construction">Construction</option>
+                <option value="Interior Design">Interior Design</option>
+                <option value="Exterior">Exterior</option>
+                <option value="Structural">Structural</option>
+                <option value="Furniture">Furniture</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Roadworks">Roadworks</option>
+              </select>
               <div className="virtualstore-modal-buttons">
-                <button onClick={handleAddMaterial}>Save</button>
-                <button onClick={closeAddModal}>Cancel</button>
+                <button className="virtualstore-save-btn" onClick={isEditing ? handleUpdateMaterial : handleAddMaterial}>
+                  {isEditing ? "Update" : "Save"}
+                </button>
+                <button className="virtualstore-cancel-btn" onClick={closeAddModal}>Cancel</button>
               </div>
             </div>
           </div>
