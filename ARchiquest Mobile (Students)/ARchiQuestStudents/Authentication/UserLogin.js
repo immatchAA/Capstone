@@ -90,7 +90,7 @@ const UserLogin = ({ navigation }) => {
           alert('Access denied. Only students can log in.');
           await supabase.auth.signOut();
         } else {
-          navigation.navigate('MainLanding');
+          navigation.navigate('MainTabs');
         }
       } catch (error) {
         alert('An unexpected error occurred. Please try again.');

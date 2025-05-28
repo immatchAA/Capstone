@@ -370,36 +370,6 @@ const MainLanding = () => {
           </TouchableOpacity>
         </ScrollView>
         
-        {/* Mobile Bottom Navigation */}
-        <View style={styles.mobileBottomNav}>
-          <TouchableOpacity style={styles.mobileNavItem}>
-            <Ionicons name="home" size={24} color="#176BB7" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.mobileNavItem}
-          onPress={() => navigation.navigate('Profile')}>
-            <Ionicons name="person-outline" size={24} color="#176BB7" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.mobileAddButton}
-            onPress={() => setIsJoinModalVisible(true)}
-          >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.mobileNavItem}
-            onPress={() => navigation.navigate('ReadingMaterials')}
-          >
-            <Ionicons name="book-outline" size={24} color="#176BB7" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.mobileNavItem}>
-            <Ionicons name="settings-outline" size={24} color="#176BB7" />
-          </TouchableOpacity>
-        </View>
-        
     {/* Mobile Side Navigation */}
 {isSideNavVisible && (
   <View
@@ -442,7 +412,8 @@ const MainLanding = () => {
           </View>
 
           <View style={styles.mobileSideNavContent}>
-            <TouchableOpacity style={styles.mobileSideNavItem}>
+            <TouchableOpacity style={styles.mobileSideNavItem}
+            onPress={() => navigation.navigate('Profile')}>
               <Ionicons name="person" size={24} color="#176BB7" />
               <Text style={styles.mobileSideNavText}>Profile</Text>
             </TouchableOpacity>
@@ -455,7 +426,8 @@ const MainLanding = () => {
               <Text style={styles.mobileSideNavText}>Reading Materials</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.mobileSideNavItem}>
+            <TouchableOpacity style={styles.mobileSideNavItem}
+            onPress={() => navigation.navigate('Settings')}>
               <Ionicons name="settings" size={24} color="#176BB7" />
               <Text style={styles.mobileSideNavText}>Settings</Text>
             </TouchableOpacity>
@@ -551,7 +523,8 @@ const MainLanding = () => {
             <Ionicons name="home-outline" size={24} color="#176BB7" />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.sidebarMenuItem}>
+          <TouchableOpacity style={styles.sidebarMenuItem}
+          onPress={() => navigation.navigate('Profile')}>
             <Ionicons name="person-outline" size={24} color="#176BB7" />
           </TouchableOpacity>
           
@@ -566,7 +539,8 @@ const MainLanding = () => {
             <Ionicons name="code-outline" size={24} color="#176BB7" />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.sidebarMenuItem}>
+          <TouchableOpacity style={styles.sidebarMenuItem}
+          onPress={() => navigation.navigate('Settings')}>
             <Ionicons name="settings-outline" size={24} color="#176BB7" />
           </TouchableOpacity>
           

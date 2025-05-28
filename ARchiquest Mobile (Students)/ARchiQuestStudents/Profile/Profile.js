@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  TouchableOpacity, TextInput, Modal, Image, Alert
+  TouchableOpacity, TextInput, Modal, Image, Alert, Platform
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../supabaseClient';
