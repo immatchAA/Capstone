@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -12,6 +12,7 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../supabaseClient';
 
 const { width, height } = Dimensions.get('window');
@@ -23,17 +24,44 @@ const DesignPlanViewer = ({ route, navigation }) => {
   const [error, setError] = useState(null);
   const [designPlans, setDesignPlans] = useState([]);
   const [instructorId, setInstructorId] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [studentProgress, setStudentProgress] = useState({});
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userId && designPlans.length > 0) {
+        console.log('🔄 Screen focused, refreshing student progress...');
+        refreshStudentProgress();
+      }
+    }, [userId, designPlans])
+  );
 
   useEffect(() => {
+    fetchUserData();
     fetchClassDetails();
   }, [classId]);
 
-  // Fetch instructor's design plans after we have the instructor ID
   useEffect(() => {
-    if (instructorId) {
+    if (instructorId && userId) {
       fetchInstructorDesignPlans();
     }
-  }, [instructorId]);
+  }, [instructorId, userId]);
+
+  const fetchUserData = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      
+      if (user) {
+        console.log('👤 Current user ID:', user.id);
+        setUserId(user.id);
+      }
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    }
+  };
 
   const fetchClassDetails = async () => {
     try {
@@ -43,38 +71,19 @@ const DesignPlanViewer = ({ route, navigation }) => {
         return;
       }
 
-      // Get available columns first to avoid errors with missing columns
-      const { data: columnsData, error: columnsError } = await supabase
-        .from('classes')
-        .select('*')
-        .limit(1);
-
-      if (columnsError) {
-        console.error("Error checking classes columns:", columnsError);
-        setError(`Failed to check table structure: ${columnsError.message}`);
-        setIsLoading(false);
-        return;
-      }
-
-      // Build a dynamic query based on available columns
-      let query = ['id', 'class_key'];
-      
-      // Add optional columns if they exist
-      if (columnsData && columnsData.length > 0) {
-        const availableColumns = Object.keys(columnsData[0]);
-        if (availableColumns.includes('class_name')) query.push('class_name');
-        if (availableColumns.includes('description')) query.push('description');
-        if (availableColumns.includes('teacher_id')) {
-          query.push('teacher_id');
-          query.push('teachers:teacher_id (first_name, last_name)');
-        }
-        if (availableColumns.includes('created_at')) query.push('created_at');
-      }
-
-      // Execute the query with only available columns
       const { data, error } = await supabase
         .from('classes')
-        .select(query.join(','))
+        .select(`
+          id,
+          class_key,
+          class_name,
+          class_description,
+          teacher_id,
+          teachers:teacher_id (
+            first_name,
+            last_name
+          )
+        `)
         .eq('id', classId)
         .single();
 
@@ -83,8 +92,6 @@ const DesignPlanViewer = ({ route, navigation }) => {
         setError(`Failed to load class: ${error.message}`);
       } else if (data) {
         setClassDetails(data);
-        
-        // Store the instructor ID for fetching their design plans
         if (data.teacher_id) {
           setInstructorId(data.teacher_id);
         } else {
@@ -99,86 +106,100 @@ const DesignPlanViewer = ({ route, navigation }) => {
     }
   };
 
+  const fetchStudentProgress = async (designPlanIds) => {
+    if (!userId || !designPlanIds.length) {
+      console.log('⚠️ Cannot fetch progress: missing userId or designPlanIds');
+      return;
+    }
+
+    try {
+      console.log('📊 Fetching student progress...');
+      console.log('📊 User ID:', userId);
+      console.log('📊 Design plan IDs:', designPlanIds);
+
+      // Query the student_progress table with the correct structure
+      const { data, error } = await supabase
+        .from('student_progress')
+        .select(`
+          id,
+          student_id,
+          design_plan_id,
+          class_id,
+          progress_step,
+          is_completed,
+          final_score,
+          final_letter_grade,
+          completed_at,
+          score,
+          completion_data
+        `)
+        .eq('student_id', userId)
+        .in('design_plan_id', designPlanIds);
+
+      if (error) {
+        console.error('❌ Error fetching student progress:', error);
+        return;
+      }
+
+      console.log('✅ Raw student progress data:', data);
+
+      // Convert array to object for easy lookup
+      const progressMap = {};
+      if (data && data.length > 0) {
+        data.forEach(progress => {
+          progressMap[progress.design_plan_id] = progress;
+          console.log(`📈 Plan ${progress.design_plan_id}:`, {
+            completed: progress.is_completed,
+            score: progress.final_score || progress.score,
+            grade: progress.final_letter_grade
+          });
+        });
+      } else {
+        console.log('📊 No progress records found for this user');
+      }
+
+      setStudentProgress(progressMap);
+    } catch (err) {
+      console.error('❌ Exception fetching student progress:', err);
+    }
+  };
+
+  const refreshStudentProgress = async () => {
+    if (!userId || designPlans.length === 0) return;
+    
+    setRefreshing(true);
+    const planIds = designPlans.map(plan => plan.id);
+    await fetchStudentProgress(planIds);
+    setRefreshing(false);
+  };
+
   const fetchInstructorDesignPlans = async () => {
     try {
-      console.log(`Fetching design plans created by instructor: ${instructorId}`);
+      console.log(`🔍 Fetching design plans for instructor: ${instructorId}`);
       
-      // Try different possible column names for the instructor/creator ID
-      const possibleCreatorColumns = [
-        'teacher_id', 
-        'instructor_id', 
-        'created_by', 
-        'author_id', 
-        'user_id'
-      ];
-      
-      let designData = [];
-      let foundColumn = false;
-      
-      for (const column of possibleCreatorColumns) {
-        try {
-          const { data, error } = await supabase
-            .from('design_plan')
-            .select('*')
-            .eq(column, instructorId);
-            
-          if (!error && data && data.length > 0) {
-            console.log(`Found ${data.length} design plans using column: ${column}`);
-            designData = data;
-            foundColumn = true;
-            break;
-          }
-        } catch (columnErr) {
-          // This column might not exist, try the next one
-          console.log(`Column ${column} might not exist:`, columnErr.message);
-        }
-      }
-      
-      // If we couldn't find by instructor ID columns, try class ID + is_instructor flag
-      if (!foundColumn) {
-        try {
-          const { data, error } = await supabase
-            .from('design_plan')
-            .select('*')
-            .eq('class_id', classId)
-            .eq('is_instructor_plan', true);
-            
-          if (!error && data && data.length > 0) {
-            console.log(`Found ${data.length} instructor design plans using is_instructor_plan flag`);
-            designData = data;
-          }
-        } catch (flagErr) {
-          console.log("is_instructor_plan column might not exist");
-        }
-      }
-      
-      // If we still don't have any plans, try one last approach - get all plans for this class
-      // and we'll just show them all (not ideal but better than nothing)
-      if (designData.length === 0) {
-        const possibleClassColumns = ['class_id', 'classId', 'class', 'class_key'];
+      // Query design_plan table using teacher_id
+      const { data, error } = await supabase
+        .from('design_plan')
+        .select('*')
+        .eq('teacher_id', instructorId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("❌ Error fetching design plans:", error);
+        setError("Failed to load instructor design plans");
+      } else if (data) {
+        console.log(`✅ Found ${data.length} design plans`);
+        console.log('🎯 Design plans:', data.map(p => ({ id: p.id, name: p.plan_name })));
+        setDesignPlans(data);
         
-        for (const column of possibleClassColumns) {
-          try {
-            const { data, error } = await supabase
-              .from('design_plan')
-              .select('*')
-              .eq(column, column === 'class_key' ? classKey : classId);
-              
-            if (!error && data && data.length > 0) {
-              console.log(`Found ${data.length} design plans for class using column: ${column}`);
-              designData = data;
-              break;
-            }
-          } catch (columnErr) {
-            // This column might not exist, try the next one
-            console.log(`Column ${column} might not exist:`, columnErr.message);
-          }
+        // Fetch student progress for these design plans
+        if (data.length > 0) {
+          const planIds = data.map(plan => plan.id);
+          await fetchStudentProgress(planIds);
         }
       }
-      
-      setDesignPlans(designData);
     } catch (err) {
-      console.error("Error fetching instructor design plans:", err);
+      console.error("❌ Exception fetching design plans:", err);
       setError("Failed to load instructor design plans");
     } finally {
       setIsLoading(false);
@@ -189,75 +210,80 @@ const DesignPlanViewer = ({ route, navigation }) => {
     navigation.goBack();
   };
 
-    const handleStartDesign = (designPlan) => {
-    // Navigate to the design plan details screen
+  const handleStartDesign = (designPlan) => {
+    console.log('🚀 Opening design plan:', designPlan.id);
     navigation.navigate('DesignPlanDetails', {
         designPlan: designPlan,
         classId: classId,
         classKey: classKey
     });
-    };
-
-  const handleViewProgress = () => {
-    // Navigate to progress screen
-    navigation.navigate('DesignProgressScreen', {
-      classId: classId,
-      classKey: classKey,
-      className: classDetails?.class_name || `Class #${classId}`
-    });
   };
 
-  const handleCreateSample = async () => {
-    try {
-      setIsLoading(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        Alert.alert("Error", "You must be logged in to create a design");
-        return;
-      }
-      
-      // Create a sample design plan
-      const samplePlan = {
-        title: "Sample Instructor Design Plan",
-        description: "This is a sample design plan created by the instructor for this class.",
-        user_id: user.id,  // Current user (not the instructor)
-        class_id: classId,
-        created_at: new Date().toISOString(),
-        status: "in_progress",
-        is_instructor_plan: true  // Flag it as an instructor plan
-      };
-      
-      // Try to add teacher_id if we have it
-      if (instructorId) {
-        samplePlan.teacher_id = instructorId;
-      }
-      
-      const { data, error } = await supabase
-        .from('design_plan')
-        .insert([samplePlan])
-        .select();
-        
-      if (error) {
-        console.error("Error creating sample plan:", error);
-        Alert.alert("Error", `Failed to create sample: ${error.message}`);
-      } else {
-        Alert.alert("Success", "Sample instructor design plan created!");
-        fetchInstructorDesignPlans();
-      }
-    } catch (err) {
-      console.error("Exception in createSample:", err);
-      Alert.alert("Error", "An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
+  // Get completion status for a design plan
+  const getCompletionStatus = (planId) => {
+    const progress = studentProgress[planId];
+    console.log(`🔍 Checking completion for plan ${planId}:`, progress);
+    
+    if (!progress) {
+      return { isCompleted: false, status: 'not_started' };
     }
+    
+    if (progress.is_completed) {
+      return {
+        isCompleted: true,
+        status: 'completed',
+        score: progress.final_score || progress.score,
+        grade: progress.final_letter_grade,
+        completedAt: progress.completed_at
+      };
+    }
+    
+    return {
+      isCompleted: false,
+      status: 'in_progress',
+      progressStep: progress.progress_step
+    };
+  };
+
+  // Render completion badge
+  const renderCompletionBadge = (planId) => {
+    const completion = getCompletionStatus(planId);
+    
+    if (completion.status === 'completed') {
+      return (
+        <View style={styles.completionBadge}>
+          <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+          <Text style={styles.completionText}>
+            Completed {completion.grade ? `(${completion.grade})` : ''}
+          </Text>
+        </View>
+      );
+    } else if (completion.status === 'in_progress') {
+      return (
+        <View style={[styles.completionBadge, styles.inProgressBadge]}>
+          <Ionicons name="time-outline" size={16} color="#FF9800" />
+          <Text style={[styles.completionText, styles.inProgressText]}>
+            In Progress
+          </Text>
+        </View>
+      );
+    }
+    
+    return (
+      <View style={[styles.completionBadge, styles.notStartedBadge]}>
+        <Ionicons name="play-circle-outline" size={16} color="#666" />
+        <Text style={[styles.completionText, styles.notStartedText]}>
+          Not Started
+        </Text>
+      </View>
+    );
   };
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#176BB7" />
+        <Text style={styles.loadingText}>Loading design plans...</Text>
       </View>
     );
   }
@@ -269,13 +295,15 @@ const DesignPlanViewer = ({ route, navigation }) => {
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Instructor Design Plans</Text>
+        <Text style={styles.headerTitle}>Design Plans</Text>
+        {refreshing && (
+          <ActivityIndicator size="small" color="#FFFFFF" style={{ marginLeft: 8 }} />
+        )}
       </View>
 
       <ScrollView style={styles.scrollView}>
-        {/* Background Card */}
         <View style={styles.card}>
-          {/* Class Image/Banner */}
+          {/* Class Banner */}
           <ImageBackground
             source={{ uri: 'https://images.unsplash.com/photo-1557683311-eac922347aa1?q=80&w=2429&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }}
             style={styles.classBanner}
@@ -302,85 +330,107 @@ const DesignPlanViewer = ({ route, navigation }) => {
               </View>
             )}
             
-            {classDetails?.description ? (
-              <Text style={styles.classDescription}>
-                {classDetails.description}
-              </Text>
-            ) : (
-              <Text style={styles.classDescription}>
-                No description available for this class. This class includes design plans created by the instructor that students can work on to enhance their understanding of architectural and construction concepts.
-              </Text>
-            )}
+            <Text style={styles.classDescription}>
+              {classDetails?.class_description || "Work on design plans created by your instructor to enhance your understanding of architectural and construction concepts."}
+            </Text>
           </View>
 
-          {/* Design Plan Details */}
+          {/* Debug Info */}
+          {__DEV__ && (
+            <View style={styles.debugInfo}>
+              <Text style={styles.debugText}>Debug Info:</Text>
+              <Text style={styles.debugText}>User ID: {userId}</Text>
+              <Text style={styles.debugText}>Class ID: {classId}</Text>
+              <Text style={styles.debugText}>Design Plans: {designPlans.length}</Text>
+              <Text style={styles.debugText}>Progress Records: {Object.keys(studentProgress).length}</Text>
+              
+              <TouchableOpacity 
+                style={styles.debugButton}
+                onPress={refreshStudentProgress}
+              >
+                <Text style={styles.debugButtonText}>Refresh Progress</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Design Plans */}
           <View style={styles.designPlanContainer}>
             <View style={styles.sectionTitleContainer}>
               <Ionicons name="document-text" size={22} color="#176BB7" />
-              <Text style={styles.sectionTitle}>Instructor Design Plans</Text>
+              <Text style={styles.sectionTitle}>Design Plans</Text>
+              <TouchableOpacity 
+                style={styles.refreshButton}
+                onPress={refreshStudentProgress}
+                disabled={refreshing}
+              >
+                <Ionicons 
+                  name="refresh" 
+                  size={20} 
+                  color={refreshing ? "#ccc" : "#176BB7"} 
+                />
+              </TouchableOpacity>
             </View>
             
             {designPlans.length > 0 ? (
-              designPlans.map((plan, index) => (
-                <View key={plan.id || index} style={styles.planItem}>
-                  <View style={styles.planIconContainer}>
-                    <Ionicons name="document-text-outline" size={28} color="#176BB7" />
+              designPlans.map((plan, index) => {
+                const completion = getCompletionStatus(plan.id);
+                
+                return (
+                  <View key={plan.id || index} style={[
+                    styles.planItem,
+                    completion.isCompleted && styles.completedPlanItem
+                  ]}>
+                    <View style={styles.planIconContainer}>
+                      <Ionicons 
+                        name={completion.isCompleted ? "checkmark-circle" : "document-text-outline"} 
+                        size={28} 
+                        color={completion.isCompleted ? "#4CAF50" : "#176BB7"} 
+                      />
+                    </View>
+                    <View style={styles.planInfo}>
+                      <Text style={styles.planTitle}>
+                        {plan.plan_name || `Design Plan ${index + 1}`}
+                      </Text>
+                      <Text style={styles.planDescription} numberOfLines={2}>
+                        {plan.description || "No description available"}
+                      </Text>
+                      {renderCompletionBadge(plan.id)}
+                      {completion.isCompleted && completion.completedAt && (
+                        <Text style={styles.completedDate}>
+                          Completed: {new Date(completion.completedAt).toLocaleDateString()}
+                        </Text>
+                      )}
+                      {completion.isCompleted && completion.score && (
+                        <Text style={styles.scoreText}>
+                          Score: {completion.score}/100
+                        </Text>
+                      )}
+                    </View>
+                    <TouchableOpacity 
+                      style={[
+                        styles.planButton,
+                        completion.isCompleted && styles.completedPlanButton
+                      ]}
+                      onPress={() => handleStartDesign(plan)}
+                    >
+                      <Text style={[
+                        styles.planButtonText,
+                        completion.isCompleted && styles.completedPlanButtonText
+                      ]}>
+                        {completion.isCompleted ? "Review" : "Start"}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                  <View style={styles.planInfo}>
-                    <Text style={styles.planTitle}>
-                      {plan.title || plan.plan_name || `Design Plan ${index + 1}`}
-                    </Text>
-                    <Text style={styles.planDescription} numberOfLines={2}>
-                      {plan.description || "No description available"}
-                    </Text>
-                  </View>
-                  <TouchableOpacity 
-                    style={styles.planButton}
-                    onPress={() => handleStartDesign(plan)}
-                  >
-                    <Text style={styles.planButtonText}>Open</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
+                );
+              })
             ) : (
               <View style={styles.emptyState}>
                 <Ionicons name="document-outline" size={48} color="#B4D4FF" />
                 <Text style={styles.emptyStateText}>
-                  No instructor design plans found for this class
+                  No design plans found for this class
                 </Text>
-                <TouchableOpacity 
-                  style={styles.createButton}
-                  onPress={handleCreateSample}
-                >
-                  <Text style={styles.createButtonText}>Create Sample Plan</Text>
-                </TouchableOpacity>
               </View>
             )}
-          </View>
-          
-          {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
-              onPress={() => {
-                if (designPlans.length > 0) {
-                  handleStartDesign(designPlans[0]);
-                } else {
-                  handleCreateSample();
-                }
-              }}
-            >
-              <Text style={styles.primaryButtonText}>
-                {designPlans.length > 0 ? "Start Design Plan" : "Create Sample Plan"}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton]}
-              onPress={handleViewProgress}
-            >
-              <Text style={styles.secondaryButtonText}>View Class Progress</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -388,6 +438,7 @@ const DesignPlanViewer = ({ route, navigation }) => {
   );
 };
 
+// Styles remain the same as previous version
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -398,6 +449,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#EEF5FF',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
   },
   header: {
     flexDirection: 'row',
@@ -414,6 +470,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginLeft: 16,
+    flex: 1,
   },
   scrollView: {
     flex: 1,
@@ -473,6 +530,32 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: '#666',
   },
+  debugInfo: {
+    backgroundColor: '#FFF3E0',
+    padding: 12,
+    margin: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#E65100',
+    marginBottom: 2,
+  },
+  debugButton: {
+    backgroundColor: '#FFE0B2',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  debugButtonText: {
+    fontSize: 12,
+    color: '#E65100',
+    fontWeight: '600',
+  },
   designPlanContainer: {
     padding: 16,
   },
@@ -486,14 +569,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#176BB7',
     marginLeft: 8,
+    flex: 1,
+  },
+  refreshButton: {
+    padding: 8,
   },
   planItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: '#F8FAFF',
     padding: 12,
     borderRadius: 8,
     marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#B4D4FF',
+  },
+  completedPlanItem: {
+    backgroundColor: '#F0F8F0',
+    borderLeftColor: '#4CAF50',
   },
   planIconContainer: {
     width: 50,
@@ -516,17 +609,64 @@ const styles = StyleSheet.create({
   planDescription: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 8,
+  },
+  completionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  inProgressBadge: {
+    backgroundColor: '#FFF3E0',
+  },
+  notStartedBadge: {
+    backgroundColor: '#F5F5F5',
+  },
+  completionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4CAF50',
+    marginLeft: 4,
+  },
+  inProgressText: {
+    color: '#FF9800',
+  },
+  notStartedText: {
+    color: '#666',
+  },
+  completedDate: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontStyle: 'italic',
+    marginBottom: 2,
+  },
+  scoreText: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '600',
   },
   planButton: {
     backgroundColor: '#B4D4FF',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
+    marginTop: 8,
+  },
+  completedPlanButton: {
+    backgroundColor: '#C8E6C9',
   },
   planButtonText: {
     color: '#1E4F91',
     fontWeight: '600',
     fontSize: 14,
+  },
+  completedPlanButtonText: {
+    color: '#2E7D32',
   },
   emptyState: {
     alignItems: 'center',
@@ -540,44 +680,6 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginTop: 16,
-    marginBottom: 16,
-  },
-  createButton: {
-    backgroundColor: '#B4D4FF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  createButtonText: {
-    color: '#1E4F91',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  buttonContainer: {
-    padding: 16,
-    paddingTop: 8,
-  },
-  button: {
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  primaryButton: {
-    backgroundColor: '#176BB7',
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  secondaryButton: {
-    backgroundColor: '#EEF5FF',
-  },
-  secondaryButtonText: {
-    color: '#176BB7',
-    fontWeight: '600',
-    fontSize: 16,
   },
 });
 
