@@ -244,15 +244,34 @@ const Profile = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  fullScreen: { flex: 1, backgroundColor: '#EEF5FF' },
-  header1: {
-    height: '8%', backgroundColor: '#176B87', flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, padding: 12, elevation: 4,
+  fullScreen: { flex: 1, 
+    backgroundColor: '#EEF5FF' 
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: 'white' },
-  container: { flex: 1, backgroundColor: '#EEF5FF' },
+  header1: {
+    height: '8%', 
+    backgroundColor: '#176B87', 
+    flexDirection: 'row',
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 16, 
+    padding: 12, 
+    elevation: 4,
+  },
+  headerTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: 'white' 
+  },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#EEF5FF' 
+  },
   content: { padding: 20 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loader: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   header: {
     alignItems: 'center', marginBottom: 30, paddingVertical: 20,
     backgroundColor: '#fff', borderRadius: 16, shadowColor: '#000',
@@ -260,23 +279,60 @@ const styles = StyleSheet.create({
     shadowRadius: 8, elevation: 4,
   },
   avatarContainer: { marginBottom: 10 },
-  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 2, borderColor: '#176B87' },
-  avatarPlaceholder: {
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: '#176B87', justifyContent: 'center', alignItems: 'center',
+  avatar: { 
+    width: 100, 
+    height: 100, 
+    borderRadius: 50, 
+    borderWidth: 2, 
+    borderColor: '#176B87' 
   },
-  name: { fontSize: 24, fontWeight: 'bold', color: '#176B87', marginTop: 8 },
-  email: { fontSize: 16, color: '#666', marginBottom: 10 },
-  editIcon: { position: 'absolute', top: 16, right: 16 },
+  avatarPlaceholder: {
+    width: 100, 
+    height: 100, 
+    borderRadius: 50,
+    backgroundColor: '#176B87', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+  },
+  name: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: '#176B87', 
+    marginTop: 8 
+  },
+  email: { 
+    fontSize: 16, 
+    color: '#666', 
+    marginBottom: 10 
+  },
+  editIcon: { 
+    position: 'absolute', 
+    top: 16, 
+    right: 16 
+  },
   section: { marginBottom: 25 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#176B87', marginBottom: 10 },
-  item: { fontSize: 15, color: '#333' },
-  placeholder: { fontStyle: 'italic', color: '#888', marginLeft: 10 },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: '#176B87', 
+    marginBottom: 10 
+  },
+  item: { 
+    fontSize: 15, 
+    color: '#333' 
+  },
+  placeholder: { 
+    fontStyle: 'italic', 
+    color: '#888', 
+    marginLeft: 10 
+  },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     flex: 1,
+    borderWidth: 0.5,
+    borderColor: '#176B87',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -299,29 +355,45 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   modalOverlay: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)'
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(0,0,0,0.5)'
   },
   modalContent: {
-    width: '90%', backgroundColor: 'white', padding: 20,
-    borderRadius: 12, elevation: 5, alignItems: 'stretch',
+    width: '90%', 
+    backgroundColor: 'white', 
+    padding: 20,
+    borderRadius: 12,
+    elevation: 5, 
+    alignItems: 'stretch',
   },
   input: {
-    backgroundColor: '#f3f3f3', padding: 10,
-    borderRadius: 8, marginBottom: 12,
+    backgroundColor: '#f3f3f3', 
+    padding: 10,
+    borderRadius: 8, 
+    marginBottom: 12,
   },
   modalButton: {
     backgroundColor: '#176B87',
-    padding: 10, borderRadius: 8, flex: 1, alignItems: 'center',
+    padding: 10, 
+    borderRadius: 8, 
+    flex: 1, 
+    alignItems: 'center',
   },
   modalButtonText: {
     color: 'white', fontWeight: '600',
   },
   modalCancel: {
     backgroundColor: '#eee',
-    padding: 10, borderRadius: 8, flex: 1, alignItems: 'center',
+    padding: 10, 
+    borderRadius: 8, 
+    flex: 1, 
+    alignItems: 'center',
   },
   modalCancelText: {
-    color: '#333', fontWeight: '600',
+    color: '#333', 
+    fontWeight: '600',
   },
 });
 
