@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, 
-  Animated, Dimensions, Image, Alert, SafeAreaView, Platform, StatusBar
+  Animated, Dimensions, Image, Alert, SafeAreaView, Platform, StatusBar, RefreshControl
   } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,9 +21,18 @@ const MainLanding = () => {
   const [studentName, setStudentName] = useState('');
   const [activeClasses, setActiveClasses] = useState([]);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const screenWidth = Dimensions.get('window').width;
   const slideAnim = useRef(new Animated.Value(screenWidth)).current;
+
+  const onRefresh = async () => {
+  setRefreshing(true);
+  await fetchStudentName();
+  await fetchActiveClasses();
+  setRefreshing(false);
+};
+
 
   useEffect(() => {
     fetchStudentName();
@@ -297,6 +306,9 @@ const MainLanding = () => {
           style={styles.mobileContentArea} 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.mobileContentContainer}
+          refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#176BB7" />
+          }
         >
           <Text style={styles.mobileSectionTitle}>Active Classes</Text>
           

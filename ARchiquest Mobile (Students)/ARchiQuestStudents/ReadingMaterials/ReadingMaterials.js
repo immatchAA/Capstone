@@ -1,29 +1,82 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator,RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../supabaseClient';
 
 const ReadingMaterials = ({ navigation }) => {
+  const [user, setUser] = useState(null);
   const [materials, setMaterials] = useState([]);
+  const [savedMaterials, setSavedMaterials] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+const onRefresh = async () => {
+  setRefreshing(true);
+  await fetchMaterials();
+  setRefreshing(false);
+};
 
   useEffect(() => {
-    const fetchMaterials = async () => {
-      const { data, error } = await supabase
-        .from('reading_materials')
-        .select('id, title')
-        .order('created_at', { ascending: false });
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+  };
+  getCurrentUser();
+}, []);
 
-      if (error) {
-        console.error('Error fetching materials:', error);
-      } else {
-        setMaterials(data);
+  useEffect(() => {
+    if (user) {
+      fetchMaterials();
+    }
+  }, [user]);
+
+  const fetchMaterials = async () => {
+    const { data, error } = await supabase
+      .from('reading_materials')
+      .select('id, title')
+      .order('created_at', { ascending: false });
+
+    const { data: saved, error: savedError } = await supabase
+      .from('saved_reading_materials')
+      .select('material_id')
+      .eq('user_id', user.id);
+
+    if (!error && !savedError) {
+      setMaterials(data);
+      setSavedMaterials(new Set(saved.map(item => item.material_id)));
+    } else {
+      console.error(error || savedError);
+    }
+    setLoading(false);
+  };
+
+  const toggleSaveMaterial = async (material) => {
+    if (savedMaterials.has(material.id)) {
+      const { error } = await supabase
+        .from('saved_reading_materials')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('material_id', material.id);
+
+      if (!error) {
+        const updatedSet = new Set(savedMaterials);
+        updatedSet.delete(material.id);
+        setSavedMaterials(updatedSet);
       }
-      setLoading(false);
-    };
+    } else {
+      const { error } = await supabase.from('saved_reading_materials').insert({
+        user_id: user.id,
+        material_id: material.id,
+        title: material.title,
+      });
 
-    fetchMaterials();
-  }, []);
+      if (!error) {
+        const updatedSet = new Set(savedMaterials);
+        updatedSet.add(material.id);
+        setSavedMaterials(updatedSet);
+      }
+    }
+  };
 
   const onBack = () => {
     navigation.goBack();
@@ -47,12 +100,27 @@ const ReadingMaterials = ({ navigation }) => {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContentContainer}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContentContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#176B87" />
+        }
+      >
         <View style={styles.row}>
           {materials.map((material) => (
             <View key={material.id} style={styles.cardContainer}>
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>{material.title}</Text>
+                <View style={styles.cardTopRow}>
+                  <Text style={styles.cardTitle}>{material.title}</Text>
+                  <TouchableOpacity onPress={() => toggleSaveMaterial(material)}>
+                    <Ionicons
+                      name={savedMaterials.has(material.id) ? 'bookmark' : 'bookmark-outline'}
+                      size={22}
+                      color="#176B87"
+                    />
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
                   style={styles.cardButton}
                   onPress={() =>
@@ -122,11 +190,18 @@ const styles = StyleSheet.create({
     height: 150,
     justifyContent: 'space-between',
   },
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   cardTitle: {
     fontSize: 15,
     fontWeight: 'bold',
     color: '#176B87',
-    marginBottom: 10,
+    flex: 1,
+    marginRight: 10,
   },
   cardButton: {
     backgroundColor: '#176B87',

@@ -163,12 +163,12 @@ const [isLoggingOut, setIsLoggingOut] = useState(false);
             );
           }
 
-          const iconMap = {
-            MainLanding: 'home-outline',
-            Profile: 'person-outline',
-            ReadingMaterials: 'book-outline',
-            Settings: 'settings-outline',
-          };
+            const iconMap = {
+              MainLanding: isFocused => isFocused ? 'home' : 'home-outline',
+              Profile: isFocused => isFocused ? 'person' : 'person-outline',
+              ReadingMaterials: isFocused => isFocused ? 'book' : 'book-outline',
+              Settings: isFocused => isFocused ? 'settings' : 'settings-outline',
+            };
 
           return (
             <TouchableOpacity
@@ -177,10 +177,11 @@ const [isLoggingOut, setIsLoggingOut] = useState(false);
               style={styles.tabItem}
             >
               <Ionicons
-                name={iconMap[route.name]}
+                name={iconMap[route.name](isFocused)}
                 size={24}
-                color={isFocused ? '#176BB7' : 'gray'}
+                color="#176BB7"
               />
+
             </TouchableOpacity>
           );
         })}
