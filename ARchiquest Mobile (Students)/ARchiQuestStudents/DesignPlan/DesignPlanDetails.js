@@ -304,6 +304,8 @@ const DesignPlanDetails = ({ route, navigation }) => {
   const [currentProgress, setCurrentProgress] = useState(0)
   const [savingProgress, setSavingProgress] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [completionData, setCompletionData] = useState(null)
 
   // Enhanced feedback states
   const [isFeedbackModalVisible, setIsFeedbackModalVisible] = useState(false)
@@ -380,6 +382,56 @@ const DesignPlanDetails = ({ route, navigation }) => {
   useEffect(() => {
     calculateTotalCost()
   }, [selectedMaterials])
+
+  // Add this at the beginning of the component, right after the existing useEffect hooks
+  useEffect(() => {
+    // Check if the design plan is already completed when the component loads
+    if (userId && designPlan?.id) {
+      checkCompletionStatus(designPlan.id);
+    }
+  }, [userId, designPlan]);
+
+  // Add this new function to check completion status
+  const checkCompletionStatus = async (designPlanId) => {
+    try {
+      console.log('🔍 Checking completion status for plan:', designPlanId);
+      
+      const { data, error } = await supabase
+        .from("student_progress")
+        .select("is_completed, completed_at, final_score, final_letter_grade, completion_data")
+        .eq("student_id", userId)
+        .eq("design_plan_id", designPlanId)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("❌ Error checking completion status:", error);
+        return;
+      }
+
+      if (data && data.is_completed) {
+        console.log('✅ Design plan already completed:', data);
+        setIsCompleted(true);
+        
+        // Parse completion data if available
+        if (data.completion_data) {
+          try {
+            const parsedData = JSON.parse(data.completion_data);
+            setCompletionData(parsedData);
+          } catch (e) {
+            console.error("❌ Error parsing completion data:", e);
+          }
+        }
+        
+        // Set other completion-related state
+        setCurrentProgress(progressSteps.length - 1);
+      } else {
+        console.log('📝 Design plan not completed yet');
+        setIsCompleted(false);
+      }
+    } catch (err) {
+      console.error("❌ Exception in checkCompletionStatus:", err);
+    }
+  };
 
   const fetchUserData = async () => {
     try {
@@ -609,9 +661,10 @@ const DesignPlanDetails = ({ route, navigation }) => {
         }
       } else if (data) {
         setCurrentProgress(data.progress_step)
+        setIsCompleted(data.is_completed || false)
+        setCompletionData(data.completion_data ? JSON.parse(data.completion_data) : null)
         // If there are saved cost estimates, load them
         if (data.cost_estimates) {
-          // Update selected materials based on saved cost estimates
           updateMaterialsFromEstimates(data.cost_estimates)
         }
       }
@@ -850,112 +903,69 @@ const DesignPlanDetails = ({ route, navigation }) => {
 
     if (instructorAnswerKey.length > 0) {
       // Handle both old format (array of IDs) and new format (array of objects)
-      const instructorMaterialData = instructorAnswerKey
+      let instructorMaterialData = []
 
-      if (typeof instructorAnswerKey[0] === "string" || typeof instructorAnswerKey[0] === "number") {
-        // Old format - just material IDs
-        const studentMaterialIds = selectedMaterials.map((m) => m.id)
-        const instructorMaterialIds = instructorAnswerKey
-
-        const matchingMaterials = studentMaterialIds.filter((id) => instructorMaterialIds.includes(id))
-        const extraMaterials = studentMaterialIds.filter((id) => !instructorMaterialIds.includes(id))
-        const missedMaterials = instructorMaterialIds.filter((id) => !studentMaterialIds.includes(id))
-
-        const matchPercentage = matchingMaterials.length / Math.max(instructorMaterialIds.length, 1)
-        answerKeyMatchScore = Math.round(matchPercentage * 15)
-        const extraPenalty = Math.min(extraMaterials.length * 1, 5)
-        answerKeyMatchScore = Math.max(0, answerKeyMatchScore - extraPenalty)
+      if (typeof instructorAnswerKey[0] === "object") {
+        // New format with quantity and cost data
+        instructorMaterialData = instructorAnswerKey
       } else {
-        // New format - objects with quantities and costs
-        const studentMaterialIds = selectedMaterials.map((m) => m.id)
-        const instructorMaterialIds = instructorMaterialData.map((item) => item.materialId)
-
-        // Material selection match (40% of material score)
-        const matchingMaterials = studentMaterialIds.filter((id) => instructorMaterialIds.includes(id))
-        const extraMaterials = studentMaterialIds.filter((id) => !instructorMaterialIds.includes(id))
-        const missedMaterials = instructorMaterialIds.filter((id) => !studentMaterialIds.includes(id))
-
-        const selectionMatchPercentage = matchingMaterials.length / Math.max(instructorMaterialIds.length, 1)
-        const selectionScore = Math.round(selectionMatchPercentage * 10) // Max 10 points
-
-        // Quantity accuracy assessment (35% of material score)
-        let quantityScore = 0
-        let totalQuantityAccuracy = 0
-        let quantityComparisons = 0
-
-        matchingMaterials.forEach((materialId) => {
-          const studentMaterial = selectedMaterials.find((m) => m.id === materialId)
-          const instructorMaterial = instructorMaterialData.find((item) => item.materialId === materialId)
-
-          if (studentMaterial && instructorMaterial && instructorMaterial.quantity > 0) {
-            const studentQty = studentMaterial.quantity
-            const expectedQty = instructorMaterial.quantity
-
-            // Calculate accuracy percentage (closer to expected = higher score)
-            const qtyDifference = Math.abs(studentQty - expectedQty) / expectedQty
-            const qtyAccuracy = Math.max(0, 1 - qtyDifference) // 1 = perfect, 0 = very wrong
-
-            totalQuantityAccuracy += qtyAccuracy
-            quantityComparisons++
-          }
-        })
-
-        if (quantityComparisons > 0) {
-          const avgQuantityAccuracy = totalQuantityAccuracy / quantityComparisons
-          quantityScore = Math.round(avgQuantityAccuracy * 8.75) // Max 8.75 points
-        }
-
-        // Cost estimation accuracy (25% of material score)
-        let costScore = 0
-        let totalCostAccuracy = 0
-        let costComparisons = 0
-
-        matchingMaterials.forEach((materialId) => {
-          const studentMaterial = selectedMaterials.find((m) => m.id === materialId)
-          const instructorMaterial = instructorMaterialData.find((item) => item.materialId === materialId)
-
-          if (studentMaterial && instructorMaterial && instructorMaterial.estimatedCost > 0) {
-            const studentCost = studentMaterial.price * studentMaterial.quantity
-            const expectedCost = instructorMaterial.estimatedCost * instructorMaterial.quantity
-
-            // Calculate cost accuracy
-            const costDifference = Math.abs(studentCost - expectedCost) / expectedCost
-            const costAccuracy = Math.max(0, 1 - costDifference)
-
-            totalCostAccuracy += costAccuracy
-            costComparisons++
-          }
-        })
-
-        if (costComparisons > 0) {
-          const avgCostAccuracy = totalCostAccuracy / costComparisons
-          costScore = Math.round(avgCostAccuracy * 6.25) // Max 6.25 points
-        }
-
-        // Penalty for extra materials
-        const extraPenalty = Math.min(extraMaterials.length * 0.5, 3)
-
-        answerKeyMatchScore = Math.max(0, selectionScore + quantityScore + costScore - extraPenalty)
-
-        // Store detailed analysis for feedback
-        scoreData.materialAnalysis = {
-          totalInstructorMaterials: instructorMaterialIds.length,
-          matchingMaterials: matchingMaterials.length,
-          extraMaterials: extraMaterials.length,
-          missedMaterials: missedMaterials.length,
-          selectionMatchPercentage: (selectionMatchPercentage * 100).toFixed(1),
-          quantityAccuracy:
-            quantityComparisons > 0 ? ((totalQuantityAccuracy / quantityComparisons) * 100).toFixed(1) : "N/A",
-          costAccuracy: costComparisons > 0 ? ((totalCostAccuracy / costComparisons) * 100).toFixed(1) : "N/A",
-          selectionScore: selectionScore,
-          quantityScore: quantityScore,
-          costScore: costScore,
-          answerKeyScore: answerKeyMatchScore,
-          enhancedScoring: true,
-        }
+        // Old format (just IDs) - convert for compatibility
+        instructorMaterialData = instructorAnswerKey.map((id) => ({
+          material_id: id,
+          quantity: 1,
+          cost: 0,
+        }))
       }
 
-      // Essential materials coverage (remaining percentage)
+      // Compare student selections against instructor's answer key
+      const studentMaterialIds = selectedMaterials.map((m) => m.id)
+      const instructorMaterialIds = instructorMaterialData.map((item) => item.material_id)
+
+      // Calculate how many materials match the answer key
+      const matchingMaterials = studentMaterialIds.filter((id) => instructorMaterialIds.includes(id))
+      const extraMaterials = studentMaterialIds.filter((id) => !instructorMaterialIds.includes(id))
+      const missedMaterials = instructorMaterialIds.filter((id) => !studentMaterialIds.includes(id))
+
+      // Enhanced scoring with quantity and cost comparison
+      let quantityAccuracyScore = 0
+      let costAccuracyScore = 0
+
+      if (typeof instructorAnswerKey[0] === "object") {
+        // Calculate quantity and cost accuracy for matching materials
+        matchingMaterials.forEach((materialId) => {
+          const studentMaterial = selectedMaterials.find((m) => m.id === materialId)
+          const instructorMaterial = instructorMaterialData.find((m) => m.material_id === materialId)
+
+          if (studentMaterial && instructorMaterial) {
+            // Quantity accuracy (within 20% tolerance gets full points)
+            const quantityRatio =
+              Math.abs(studentMaterial.quantity - instructorMaterial.quantity) / instructorMaterial.quantity
+            if (quantityRatio <= 0.2) quantityAccuracyScore += 2
+            else if (quantityRatio <= 0.5) quantityAccuracyScore += 1
+
+            // Cost accuracy (within 15% tolerance gets full points)
+            if (instructorMaterial.cost > 0) {
+              const costRatio = Math.abs(studentMaterial.price - instructorMaterial.cost) / instructorMaterial.cost
+              if (costRatio <= 0.15) costAccuracyScore += 2
+              else if (costRatio <= 0.3) costAccuracyScore += 1
+            }
+          }
+        })
+      }
+
+      // Answer key match score (40% of material selection score)
+      const matchPercentage = matchingMaterials.length / Math.max(instructorMaterialIds.length, 1)
+      answerKeyMatchScore = Math.round(matchPercentage * 10) // Max 10 points for material matching
+
+      // Add quantity and cost accuracy bonuses
+      answerKeyMatchScore += Math.min(quantityAccuracyScore, 3) // Max 3 bonus points for quantity accuracy
+      answerKeyMatchScore += Math.min(costAccuracyScore, 2) // Max 2 bonus points for cost accuracy
+
+      // Penalty for extra materials (reduce score for unnecessary selections)
+      const extraPenalty = Math.min(extraMaterials.length * 1, 5) // Max 5 point penalty
+      answerKeyMatchScore = Math.max(0, answerKeyMatchScore - extraPenalty)
+
+      // Essential materials coverage (60% of material selection score)
       const essentialMaterials = [
         "cement",
         "concrete",
@@ -992,6 +1002,20 @@ const DesignPlanDetails = ({ route, navigation }) => {
       essentialMaterialsScore = Math.round(essentialCompleteness * 10) // Max 10 points
 
       materialScore = answerKeyMatchScore + essentialMaterialsScore
+
+      // Store additional data for detailed feedback
+      scoreData.materialAnalysis = {
+        totalInstructorMaterials: instructorMaterialIds.length,
+        matchingMaterials: matchingMaterials.length,
+        extraMaterials: extraMaterials.length,
+        missedMaterials: missedMaterials.length,
+        matchPercentage: (matchPercentage * 100).toFixed(1),
+        answerKeyScore: answerKeyMatchScore,
+        essentialScore: essentialMaterialsScore,
+        quantityAccuracy: quantityAccuracyScore,
+        costAccuracy: costAccuracyScore,
+        hasDetailedAnswerKey: typeof instructorAnswerKey[0] === "object",
+      }
     } else {
       // Fallback to original scoring if no answer key is available
       const essentialMaterials = [
@@ -1162,57 +1186,48 @@ const DesignPlanDetails = ({ route, navigation }) => {
     if (scoreData.materialAnalysis && !scoreData.materialAnalysis.fallbackScoring) {
       const analysis = scoreData.materialAnalysis
 
-      if (analysis.enhancedScoring) {
-        // Enhanced feedback for new format
-        if (analysis.selectionMatchPercentage >= 80) {
-          scoreData.strengths.push(
-            `Excellent material selection: ${analysis.selectionMatchPercentage}% match with instructor's answer key`,
-          )
-        }
-
-        if (analysis.quantityAccuracy !== "N/A" && Number.parseFloat(analysis.quantityAccuracy) >= 80) {
-          scoreData.strengths.push(`Good quantity estimation: ${analysis.quantityAccuracy}% accuracy`)
-        } else if (analysis.quantityAccuracy !== "N/A") {
-          scoreData.areasForImprovement.push(
-            `Quantity estimation needs improvement: ${analysis.quantityAccuracy}% accuracy`,
-          )
-          scoreData.recommendations.push("Review material quantity calculations and consider waste factors")
-        }
-
-        if (analysis.costAccuracy !== "N/A" && Number.parseFloat(analysis.costAccuracy) >= 80) {
-          scoreData.strengths.push(`Good cost estimation: ${analysis.costAccuracy}% accuracy`)
-        } else if (analysis.costAccuracy !== "N/A") {
-          scoreData.areasForImprovement.push(`Cost estimation needs improvement: ${analysis.costAccuracy}% accuracy`)
-          scoreData.recommendations.push("Review material pricing and consider market rates")
-        }
+      if (analysis.matchPercentage >= 80) {
+        scoreData.strengths.push(
+          `Excellent material selection: ${analysis.matchPercentage}% match with instructor's answer key`,
+        )
+      } else if (analysis.matchPercentage >= 60) {
+        scoreData.recommendations.push(
+          `Good material selection, but consider reviewing ${analysis.missedMaterials} missed materials from the answer key`,
+        )
       } else {
-        // Original feedback for old format
-        if (analysis.matchPercentage >= 80) {
-          scoreData.strengths.push(
-            `Excellent material selection: ${analysis.matchPercentage}% match with instructor's answer key`,
+        scoreData.areasForImprovement.push(
+          `Material selection needs improvement: Only ${analysis.matchPercentage}% match with expected materials`,
+        )
+      }
+
+      // Add quantity and cost specific feedback
+      if (analysis.hasDetailedAnswerKey) {
+        if (analysis.quantityAccuracy >= 5) {
+          scoreData.strengths.push("Excellent quantity estimation - very close to instructor expectations")
+        } else if (analysis.quantityAccuracy >= 3) {
+          scoreData.recommendations.push("Good quantity estimation, but some materials could be more accurate")
+        } else {
+          scoreData.areasForImprovement.push(
+            "Quantity estimation needs improvement - review material requirements carefully",
           )
+        }
+
+        if (analysis.costAccuracy >= 4) {
+          scoreData.strengths.push("Excellent cost estimation - prices are very close to expected values")
+        } else if (analysis.costAccuracy >= 2) {
+          scoreData.recommendations.push("Good cost awareness, but research current market prices for better accuracy")
+        } else {
+          scoreData.areasForImprovement.push("Cost estimation needs improvement - research current material prices")
         }
       }
 
-      // Common feedback
-      if (analysis.extraMaterials > 0) {
-        scoreData.recommendations.push(
-          `Consider if all ${selectedMaterials.length} selected materials are necessary - you selected ${analysis.extraMaterials} materials not in the answer key`,
-        )
-      }
-
-      if (analysis.missedMaterials > 0) {
-        scoreData.recommendations.push(
-          `You missed ${analysis.missedMaterials} materials that were recommended by the instructor`,
-        )
-      }
-
-      // Add educational context about enhanced scoring
-      if (analysis.enhancedScoring) {
-        scoreData.educationalFeedback.push(
-          `Your material selection was evaluated on three criteria: material choice (40%), quantity accuracy (35%), and cost estimation (25%).`,
-        )
-      }
+      // Add educational context about answer key scoring
+      scoreData.educationalFeedback.push(
+        `Your material selection was compared against the instructor's answer key, which represents the optimal material choices for this design plan.`,
+      )
+      scoreData.educationalFeedback.push(
+        `Answer key matching accounts for 60% of your material selection score, while essential material coverage accounts for 40%.`,
+      )
     } else {
       scoreData.educationalFeedback.push(
         `Material selection was evaluated based on essential construction materials coverage since no instructor answer key was available.`,
@@ -1232,23 +1247,26 @@ const DesignPlanDetails = ({ route, navigation }) => {
   // Enhanced save function with comprehensive scoring
   const saveEstimate = async () => {
     if (!estimateName.trim()) {
-      Alert.alert("Error", "Please provide a name for this estimate")
-      return
+      Alert.alert("Error", "Please provide a name for this estimate");
+      return;
     }
 
-    setIsSaving(true)
+    setIsSaving(true);
 
     try {
       // Get current user
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        Alert.alert("Error", "You must be logged in to save estimates")
-        setIsSaving(false)
-        return
+        Alert.alert("Error", "You must be logged in to save estimates");
+        setIsSaving(false);
+        return;
       }
+
+      console.log('💾 Saving estimate for user:', user.id);
+      console.log('💾 Design plan ID:', planDetails?.id);
 
       // Calculate enhanced educational score
       const scoreData = calculateEducationalScore(
@@ -1257,7 +1275,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
         planDetails,
         selectedMaterials,
         floorArea,
-      )
+      );
 
       // Create estimate record
       const { data: estimate, error: estimateError } = await supabase
@@ -1274,14 +1292,16 @@ const DesignPlanDetails = ({ route, navigation }) => {
           created_at: new Date().toISOString(),
         })
         .select()
-        .single()
+        .single();
 
       if (estimateError) {
-        console.error("Error saving estimate:", estimateError)
-        Alert.alert("Error", `Failed to save estimate: ${estimateError.message}`)
-        setIsSaving(false)
-        return
+        console.error("❌ Error saving estimate:", estimateError);
+        Alert.alert("Error", `Failed to save estimate: ${estimateError.message}`);
+        setIsSaving(false);
+        return;
       }
+
+      console.log('✅ Estimate saved:', estimate);
 
       // Save estimate items
       const estimateItems = selectedMaterials.map((material) => ({
@@ -1290,13 +1310,13 @@ const DesignPlanDetails = ({ route, navigation }) => {
         quantity: material.quantity,
         unit_price: material.price,
         total_price: material.price * material.quantity,
-      }))
+      }));
 
-      const { error: itemsError } = await supabase.from("cost_estimate_items").insert(estimateItems)
+      const { error: itemsError } = await supabase.from("cost_estimate_items").insert(estimateItems);
 
       if (itemsError) {
-        console.error("Error saving estimate items:", itemsError)
-        Alert.alert("Warning", `Estimate saved but items failed: ${itemsError.message}`)
+        console.error("⚠️ Error saving estimate items:", itemsError);
+        Alert.alert("Warning", `Estimate saved but items failed: ${itemsError.message}`);
       }
 
       // Save detailed scoring data
@@ -1322,45 +1342,109 @@ const DesignPlanDetails = ({ route, navigation }) => {
           educationalFeedback: scoreData.educationalFeedback,
         }),
         created_at: new Date().toISOString(),
-      })
+      });
 
       if (scoreError) {
-        console.error("Error saving score data:", scoreError)
-        // Don't throw error here as the estimate was saved successfully
+        console.error("⚠️ Error saving score data:", scoreError);
       }
 
       // Update progress to final step
-      updateProgress(progressSteps.length - 1)
+      updateProgress(progressSteps.length - 1);
+
+      // CRITICAL PART: Update the student_progress table with completion status
+      try {
+        // Create completion data object
+        const completionData = {
+          completed_at: new Date().toISOString(),
+          final_score: scoreData.overallScore,
+          letter_grade: scoreData.letterGrade,
+          total_cost: totalEstimatedCost,
+          materials_count: selectedMaterials.length,
+          budget_utilization: ((totalEstimatedCost / (planDetails?.budget || 300000)) * 100).toFixed(1),
+        };
+
+        console.log('📝 Saving completion data:', completionData);
+
+        // Check if a progress record exists
+        const { data: existingProgress, error: checkError } = await supabase
+          .from("student_progress")
+          .select("id")
+          .eq("student_id", user.id)
+          .eq("design_plan_id", planDetails.id)
+          .single();
+
+        if (checkError && checkError.code !== "PGRST116") {
+          console.error("❌ Error checking existing progress:", checkError);
+        }
+
+        if (existingProgress) {
+          // Update existing record
+          console.log('🔄 Updating existing progress record...');
+          const { data: updatedProgress, error: updateError } = await supabase
+            .from("student_progress")
+            .update({
+              is_completed: true,
+              completed_at: new Date().toISOString(),
+              completion_data: JSON.stringify(completionData),
+              final_score: scoreData.overallScore,
+              final_letter_grade: scoreData.letterGrade,
+              progress_step: progressSteps.length - 1,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("student_id", user.id)
+            .eq("design_plan_id", planDetails.id)
+            .select();
+
+          if (updateError) {
+            console.error("❌ Error updating progress:", updateError);
+          } else {
+            console.log("✅ Progress updated successfully:", updatedProgress);
+          }
+        } else {
+          // Create new progress record
+          console.log('➕ Creating new progress record...');
+          const { data: newProgress, error: createError } = await supabase
+            .from("student_progress")
+            .insert({
+              student_id: user.id,
+              design_plan_id: planDetails.id,
+              class_id: classId,
+              progress_step: progressSteps.length - 1,
+              is_completed: true,
+              started_at: new Date().toISOString(),
+              completed_at: new Date().toISOString(),
+              completion_data: JSON.stringify(completionData),
+              final_score: scoreData.overallScore,
+              final_letter_grade: scoreData.letterGrade,
+              updated_at: new Date().toISOString(),
+            })
+            .select();
+
+          if (createError) {
+            console.error("❌ Error creating progress:", createError);
+          } else {
+            console.log("✅ Progress created successfully:", newProgress);
+          }
+        }
+
+        // Update local state
+        setIsCompleted(true);
+        setCompletionData(completionData);
+        setCurrentProgress(progressSteps.length - 1);
+      } catch (err) {
+        console.error("❌ Exception updating completion status:", err);
+      }
 
       // Show completion dialog with enhanced feedback
-      showCompletionDialog(scoreData)
-
-      setIsEstimateModalVisible(false)
-
-      // Update the design plan status in the database
-      try {
-        const { error: updateError } = await supabase
-          .from("student_progress")
-          .update({
-            is_completed: true,
-            completed_at: new Date().toISOString(),
-          })
-          .eq("student_id", userId)
-          .eq("design_plan_id", planDetails.id)
-
-        if (updateError) {
-          console.error("Error updating design plan status:", updateError)
-        }
-      } catch (err) {
-        console.error("Exception updating design plan status:", err)
-      }
+      showCompletionDialog(scoreData);
+      setIsEstimateModalVisible(false);
     } catch (err) {
-      console.error("Exception in saveEstimate:", err)
-      Alert.alert("Error", "An unexpected error occurred while saving")
+      console.error("❌ Exception in saveEstimate:", err);
+      Alert.alert("Error", "An unexpected error occurred while saving");
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Enhanced completion dialog with comprehensive feedback
   const showCompletionDialog = (scoreData) => {
@@ -1866,6 +1950,79 @@ const DesignPlanDetails = ({ route, navigation }) => {
             )}
           </View>
 
+          {/* Completion Status Banner */}
+          {isCompleted && completionData && (
+            <View style={styles.completionBanner}>
+              <View style={styles.completionHeader}>
+                <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                <Text style={styles.completionTitle}>Design Plan Completed!</Text>
+              </View>
+              <Text style={styles.completionSubtitle}>
+                Completed on {new Date(completionData.completed_at).toLocaleDateString()}
+              </Text>
+              <View style={styles.completionStats}>
+                <View style={styles.completionStat}>
+                  <Text style={styles.completionStatLabel}>Final Score</Text>
+                  <Text style={styles.completionStatValue}>
+                    {completionData.final_score}/100 ({completionData.letter_grade})
+                  </Text>
+                </View>
+                <View style={styles.completionStat}>
+                  <Text style={styles.completionStatLabel}>Total Cost</Text>
+                  <Text style={styles.completionStatValue}>{formatCurrency(completionData.total_cost, currency)}</Text>
+                </View>
+                <View style={styles.completionStat}>
+                  <Text style={styles.completionStatLabel}>Budget Used</Text>
+                  <Text style={styles.completionStatValue}>{completionData.budget_utilization}%</Text>
+                </View>
+              </View>
+              {/* Materials Summary in Completion Banner */}
+              {completionData && selectedMaterials.length > 0 && (
+                <View style={styles.completionMaterialsSection}>
+                  <Text style={styles.completionMaterialsTitle}>Materials Selected</Text>
+                  <View style={styles.completionMaterialsList}>
+                    {selectedMaterials.slice(0, 5).map((material, index) => (
+                      <View key={index} style={styles.completionMaterialItem}>
+                        <Text style={styles.completionMaterialName} numberOfLines={1}>
+                          {material.material_name}
+                        </Text>
+                        <Text style={styles.completionMaterialDetails}>
+                          {material.quantity} × {formatCurrency(material.price, currency)}
+                        </Text>
+                      </View>
+                    ))}
+                    {selectedMaterials.length > 5 && (
+                      <Text style={styles.completionMaterialsMore}>
+                        +{selectedMaterials.length - 5} more materials
+                      </Text>
+                    )}
+                  </View>
+
+                  <View style={styles.completionCostBreakdown}>
+                    <View style={styles.completionCostRow}>
+                      <Text style={styles.completionCostLabel}>Total Materials:</Text>
+                      <Text style={styles.completionCostValue}>{selectedMaterials.length} items</Text>
+                    </View>
+                    <View style={styles.completionCostRow}>
+                      <Text style={styles.completionCostLabel}>Materials Cost:</Text>
+                      <Text style={styles.completionCostValue}>{formatCurrency(totalEstimatedCost, currency)}</Text>
+                    </View>
+                    <View style={styles.completionCostRow}>
+                      <Text style={styles.completionCostLabel}>Cost per sq.m:</Text>
+                      <Text style={styles.completionCostValue}>
+                        {formatCurrency(totalEstimatedCost / (floorArea || 1), currency)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+              <TouchableOpacity style={styles.viewResultsButton} onPress={() => setIsFeedbackModalVisible(true)}>
+                <Text style={styles.viewResultsButtonText}>View Detailed Results</Text>
+                <Ionicons name="arrow-forward" size={16} color="#176BB7" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Design File Section */}
           <View style={styles.fileSection}>
             <Text style={styles.sectionTitle}>Design Plan Preview</Text>
@@ -2085,20 +2242,32 @@ const DesignPlanDetails = ({ route, navigation }) => {
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            {selectedMaterials.length > 0 && (
-              <TouchableOpacity style={styles.primaryButton} onPress={() => setIsEstimateModalVisible(true)}>
-                <Text style={styles.primaryButtonText}>Save Cost Estimate & Get Score</Text>
-              </TouchableOpacity>
+            {isCompleted ? (
+              <>
+                <TouchableOpacity style={styles.primaryButton} onPress={() => setIsFeedbackModalVisible(true)}>
+                  <Text style={styles.primaryButtonText}>View Assessment Results</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
+                  <Text style={styles.secondaryButtonText}>Back to Design Plans</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                {selectedMaterials.length > 0 && (
+                  <TouchableOpacity style={styles.primaryButton} onPress={() => setIsEstimateModalVisible(true)}>
+                    <Text style={styles.primaryButtonText}>Save Cost Estimate & Get Score</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={selectedMaterials.length > 0 ? styles.secondaryButton : styles.primaryButton}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={selectedMaterials.length > 0 ? styles.secondaryButtonText : styles.primaryButtonText}>
+                    {selectedMaterials.length > 0 ? "Cancel" : "Go Back"}
+                  </Text>
+                </TouchableOpacity>
+              </>
             )}
-
-            <TouchableOpacity
-              style={selectedMaterials.length > 0 ? styles.secondaryButton : styles.primaryButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={selectedMaterials.length > 0 ? styles.secondaryButtonText : styles.primaryButtonText}>
-                {selectedMaterials.length > 0 ? "Cancel" : "Go Back"}
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -3148,6 +3317,130 @@ const styles = StyleSheet.create({
   summaryTableCategory: {
     flex: 1.2,
     textAlign: "right",
+  },
+  completionBanner: {
+    backgroundColor: "#E8F5E8",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  completionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  completionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2E7D32",
+    marginLeft: 8,
+  },
+  completionSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 16,
+  },
+  completionStats: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  completionStat: {
+    flex: 1,
+    alignItems: "center",
+  },
+  completionStatLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+  },
+  completionStatValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2E7D32",
+    textAlign: "center",
+  },
+  viewResultsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+  },
+  viewResultsButtonText: {
+    color: "#176BB7",
+    fontWeight: "600",
+    fontSize: 14,
+    marginRight: 8,
+  },
+  completionMaterialsSection: {
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  completionMaterialsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2E7D32",
+    marginBottom: 12,
+  },
+  completionMaterialsList: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  completionMaterialItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  completionMaterialName: {
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+    marginRight: 8,
+  },
+  completionMaterialDetails: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
+  },
+  completionMaterialsMore: {
+    fontSize: 13,
+    color: "#666",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  completionCostBreakdown: {
+    backgroundColor: "#F8FFF8",
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E8F5E8",
+  },
+  completionCostRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  completionCostLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+  completionCostValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2E7D32",
   },
 })
 

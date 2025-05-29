@@ -83,7 +83,7 @@ function Sidebar() {
           <FaChartLine className="custom-icon" /> Student Progress
         </Link>
 
-        <Link to="/createdesignplan" className="custom-nav-item">
+        <Link to="/designPlanList" className="custom-nav-item">
           <FaPencilRuler className="custom-icon" /> Create Design
         </Link>
 
