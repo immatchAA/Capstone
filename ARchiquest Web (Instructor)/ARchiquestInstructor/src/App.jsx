@@ -35,7 +35,7 @@ function App() {
       <Route path="/createdesign" element={<CreateDesignPlan />} /> {/* Create Work page */}
       <Route path="/classkey" element={<ClassKey />} /> {/* Class Key Setup page */}
       <Route path="/student-progress" element={<ClassKeyList />} /> {/* Student Progress page */}
-      <Route path="/studentProgressDetail" element={<StudentProgressDetail />} /> {/* Student Progress Detail page */}
+      <Route path="/studentProgressDetail/:studentId" element={<StudentProgressDetail />} /> {/* Student Progress Detail page */}
       <Route path="/accountE" element={<AccountE />} /> {/* Account page */}
       <Route path="/reading-materials" element={<ReadingMaterials />} />
       <Route path="/add-reading-material" element={<AddReadingMaterial />} />
