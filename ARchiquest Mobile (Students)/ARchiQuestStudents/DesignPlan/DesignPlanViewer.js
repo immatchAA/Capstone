@@ -72,7 +72,7 @@ const DesignPlanViewer = ({ route, navigation }) => {
       }
 
       const { data, error } = await supabase
-        .from('classes')
+        .from('class_keys')
         .select(`
           id,
           class_key,
@@ -335,7 +335,7 @@ const DesignPlanViewer = ({ route, navigation }) => {
             </Text>
           </View>
 
-          {/* Debug Info */}
+          {/* Debug Info
           {__DEV__ && (
             <View style={styles.debugInfo}>
               <Text style={styles.debugText}>Debug Info:</Text>
@@ -351,7 +351,7 @@ const DesignPlanViewer = ({ route, navigation }) => {
                 <Text style={styles.debugButtonText}>Refresh Progress</Text>
               </TouchableOpacity>
             </View>
-          )}
+          )} */}
 
           {/* Design Plans */}
           <View style={styles.designPlanContainer}>

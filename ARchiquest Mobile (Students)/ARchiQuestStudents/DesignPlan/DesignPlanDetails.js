@@ -540,7 +540,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
     }
 
     try {
-      const { data, error } = await supabase.from("classes").select("teacher_id").eq("id", classId).single()
+      const { data, error } = await supabase.from("class_keys").select("teacher_id").eq("id", classId).single()
 
       if (error) {
         console.error("Error fetching teacher ID:", error)
