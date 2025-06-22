@@ -36,7 +36,7 @@ function ClassKey() {
       return;
     }
 
-    const { error, data } = await supabase.from('classes').insert([
+    const { error, data } = await supabase.from('class_keys').insert([
       {
         class_key: generatedKey,
         teacher_id: teacherId,
@@ -55,12 +55,12 @@ function ClassKey() {
 
   const fetchStudents = async (teacherId) => {
     const { data: classes, error: classesError } = await supabase
-      .from('classes')
+      .from('class_keys')
       .select('id, class_key')
       .eq('teacher_id', teacherId);
 
     if (classesError) {
-      console.error("❌ Error fetching classes:", classesError);
+      console.error("❌ Error fetching class keys:", classesError);
       return;
     }
 
