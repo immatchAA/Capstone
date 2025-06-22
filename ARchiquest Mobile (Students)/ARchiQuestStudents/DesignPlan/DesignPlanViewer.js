@@ -1,78 +1,156 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+"use client"
+
+import { useState, useEffect, useCallback, useRef } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
   ImageBackground,
   Dimensions,
-  Alert
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { supabase } from '../supabaseClient';
+  Animated,
+  RefreshControl,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { LinearGradient } from "expo-linear-gradient"
+import { useFocusEffect } from "@react-navigation/native"
+import { supabase } from "../supabaseClient"
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window")
 
 const DesignPlanViewer = ({ route, navigation }) => {
-  const { classId, classKey } = route.params || {};
-  const [isLoading, setIsLoading] = useState(true);
-  const [classDetails, setClassDetails] = useState(null);
-  const [error, setError] = useState(null);
-  const [designPlans, setDesignPlans] = useState([]);
-  const [instructorId, setInstructorId] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [studentProgress, setStudentProgress] = useState({});
-  const [refreshing, setRefreshing] = useState(false);
+  const { classId, classKey } = route.params || {}
+  const [isLoading, setIsLoading] = useState(true)
+  const [classDetails, setClassDetails] = useState(null)
+  const [error, setError] = useState(null)
+  const [designPlans, setDesignPlans] = useState([])
+  const [instructorId, setInstructorId] = useState(null)
+  const [userId, setUserId] = useState(null)
+  const [studentProgress, setStudentProgress] = useState({})
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const slideAnim = useRef(new Animated.Value(50)).current
+  const headerAnim = useRef(new Animated.Value(-100)).current
+  const cardAnimations = useRef([]).current
+
+  // Initialize card animations
+  const initializeCardAnimations = (count) => {
+    cardAnimations.length = 0
+    for (let i = 0; i < count; i++) {
+      cardAnimations.push({
+        scale: new Animated.Value(0),
+        opacity: new Animated.Value(0),
+      })
+    }
+  }
+
+  // Animate cards in sequence
+  const animateCards = () => {
+    const animations = cardAnimations.map((anim, index) =>
+      Animated.parallel([
+        Animated.spring(anim.scale, {
+          toValue: 1,
+          delay: index * 100,
+          tension: 100,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.opacity, {
+          toValue: 1,
+          delay: index * 100,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+    )
+
+    Animated.stagger(50, animations).start()
+  }
+
+  // Initial animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(headerAnim, {
+        toValue: 0,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start()
+  }, [])
+
+  // Animate cards when design plans are loaded
+  useEffect(() => {
+    if (designPlans.length > 0 && !isLoading) {
+      initializeCardAnimations(designPlans.length)
+      setTimeout(() => animateCards(), 300)
+    }
+  }, [designPlans, isLoading])
 
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       if (userId && designPlans.length > 0) {
-        console.log('🔄 Screen focused, refreshing student progress...');
-        refreshStudentProgress();
+        console.log("🔄 Screen focused, refreshing student progress...")
+        refreshStudentProgress()
       }
-    }, [userId, designPlans])
-  );
+    }, [userId, designPlans]),
+  )
 
   useEffect(() => {
-    fetchUserData();
-    fetchClassDetails();
-  }, [classId]);
+    fetchUserData()
+    fetchClassDetails()
+  }, [classId])
 
   useEffect(() => {
     if (instructorId && userId) {
-      fetchInstructorDesignPlans();
+      fetchInstructorDesignPlans()
     }
-  }, [instructorId, userId]);
+  }, [instructorId, userId])
 
   const fetchUserData = async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
+      if (error) throw error
+
       if (user) {
-        console.log('👤 Current user ID:', user.id);
-        setUserId(user.id);
+        console.log("👤 Current user ID:", user.id)
+        setUserId(user.id)
       }
     } catch (err) {
-      console.error('Error fetching user data:', err);
+      console.error("Error fetching user data:", err)
     }
-  };
+  }
 
   const fetchClassDetails = async () => {
     try {
       if (!classId) {
-        setError("Class ID is missing");
-        setIsLoading(false);
-        return;
+        setError("Class ID is missing")
+        setIsLoading(false)
+        return
       }
 
       const { data, error } = await supabase
-        .from('class_keys')
+        .from("class_keys")
         .select(`
           id,
           class_key,
@@ -84,42 +162,41 @@ const DesignPlanViewer = ({ route, navigation }) => {
             last_name
           )
         `)
-        .eq('id', classId)
-        .single();
+        .eq("id", classId)
+        .single()
 
       if (error) {
-        console.error("Error fetching class details:", error);
-        setError(`Failed to load class: ${error.message}`);
+        console.error("Error fetching class details:", error)
+        setError(`Failed to load class: ${error.message}`)
       } else if (data) {
-        setClassDetails(data);
+        setClassDetails(data)
         if (data.teacher_id) {
-          setInstructorId(data.teacher_id);
+          setInstructorId(data.teacher_id)
         } else {
-          console.log("No teacher_id found for this class");
-          setIsLoading(false);
+          console.log("No teacher_id found for this class")
+          setIsLoading(false)
         }
       }
     } catch (err) {
-      console.error("Exception in fetchClassDetails:", err);
-      setError("An unexpected error occurred");
-      setIsLoading(false);
+      console.error("Exception in fetchClassDetails:", err)
+      setError("An unexpected error occurred")
+      setIsLoading(false)
     }
-  };
+  }
 
   const fetchStudentProgress = async (designPlanIds) => {
     if (!userId || !designPlanIds.length) {
-      console.log('⚠️ Cannot fetch progress: missing userId or designPlanIds');
-      return;
+      console.log("⚠️ Cannot fetch progress: missing userId or designPlanIds")
+      return
     }
 
     try {
-      console.log('📊 Fetching student progress...');
-      console.log('📊 User ID:', userId);
-      console.log('📊 Design plan IDs:', designPlanIds);
+      console.log("📊 Fetching student progress...")
+      console.log("📊 User ID:", userId)
+      console.log("📊 Design plan IDs:", designPlanIds)
 
-      // Query the student_progress table with the correct structure
       const { data, error } = await supabase
-        .from('student_progress')
+        .from("student_progress")
         .select(`
           id,
           student_id,
@@ -133,554 +210,717 @@ const DesignPlanViewer = ({ route, navigation }) => {
           score,
           completion_data
         `)
-        .eq('student_id', userId)
-        .in('design_plan_id', designPlanIds);
+        .eq("student_id", userId)
+        .in("design_plan_id", designPlanIds)
 
       if (error) {
-        console.error('❌ Error fetching student progress:', error);
-        return;
+        console.error("❌ Error fetching student progress:", error)
+        return
       }
 
-      console.log('✅ Raw student progress data:', data);
+      console.log("✅ Raw student progress data:", data)
 
-      // Convert array to object for easy lookup
-      const progressMap = {};
+      const progressMap = {}
       if (data && data.length > 0) {
-        data.forEach(progress => {
-          progressMap[progress.design_plan_id] = progress;
+        data.forEach((progress) => {
+          progressMap[progress.design_plan_id] = progress
           console.log(`📈 Plan ${progress.design_plan_id}:`, {
             completed: progress.is_completed,
             score: progress.final_score || progress.score,
-            grade: progress.final_letter_grade
-          });
-        });
+            grade: progress.final_letter_grade,
+          })
+        })
       } else {
-        console.log('📊 No progress records found for this user');
+        console.log("📊 No progress records found for this user")
       }
 
-      setStudentProgress(progressMap);
+      setStudentProgress(progressMap)
     } catch (err) {
-      console.error('❌ Exception fetching student progress:', err);
+      console.error("❌ Exception fetching student progress:", err)
     }
-  };
+  }
 
   const refreshStudentProgress = async () => {
-    if (!userId || designPlans.length === 0) return;
-    
-    setRefreshing(true);
-    const planIds = designPlans.map(plan => plan.id);
-    await fetchStudentProgress(planIds);
-    setRefreshing(false);
-  };
+    if (!userId || designPlans.length === 0) return
+
+    setRefreshing(true)
+    const planIds = designPlans.map((plan) => plan.id)
+    await fetchStudentProgress(planIds)
+    setRefreshing(false)
+  }
 
   const fetchInstructorDesignPlans = async () => {
     try {
-      console.log(`🔍 Fetching design plans for instructor: ${instructorId}`);
-      
-      // Query design_plan table using teacher_id
+      console.log(`🔍 Fetching design plans for instructor: ${instructorId}`)
+
       const { data, error } = await supabase
-        .from('design_plan')
-        .select('*')
-        .eq('teacher_id', instructorId)
-        .order('created_at', { ascending: false });
+        .from("design_plan")
+        .select("*")
+        .eq("teacher_id", instructorId)
+        .order("created_at", { ascending: false })
 
       if (error) {
-        console.error("❌ Error fetching design plans:", error);
-        setError("Failed to load instructor design plans");
+        console.error("❌ Error fetching design plans:", error)
+        setError("Failed to load instructor design plans")
       } else if (data) {
-        console.log(`✅ Found ${data.length} design plans`);
-        console.log('🎯 Design plans:', data.map(p => ({ id: p.id, name: p.plan_name })));
-        setDesignPlans(data);
-        
-        // Fetch student progress for these design plans
+        console.log(`✅ Found ${data.length} design plans`)
+        console.log(
+          "🎯 Design plans:",
+          data.map((p) => ({ id: p.id, name: p.plan_name })),
+        )
+        setDesignPlans(data)
+
         if (data.length > 0) {
-          const planIds = data.map(plan => plan.id);
-          await fetchStudentProgress(planIds);
+          const planIds = data.map((plan) => plan.id)
+          await fetchStudentProgress(planIds)
         }
       }
     } catch (err) {
-      console.error("❌ Exception fetching design plans:", err);
-      setError("Failed to load instructor design plans");
+      console.error("❌ Exception fetching design plans:", err)
+      setError("Failed to load instructor design plans")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleGoBack = () => {
-    navigation.goBack();
-  };
+    navigation.goBack()
+  }
 
   const handleStartDesign = (designPlan) => {
-    console.log('🚀 Opening design plan:', designPlan.id);
-    navigation.navigate('DesignPlanDetails', {
-        designPlan: designPlan,
-        classId: classId,
-        classKey: classKey
-    });
-  };
+    console.log("🚀 Opening design plan:", designPlan.id)
+    navigation.navigate("DesignPlanDetails", {
+      designPlan: designPlan,
+      classId: classId,
+      classKey: classKey,
+    })
+  }
 
-  // Get completion status for a design plan
   const getCompletionStatus = (planId) => {
-    const progress = studentProgress[planId];
-    console.log(`🔍 Checking completion for plan ${planId}:`, progress);
-    
+    const progress = studentProgress[planId]
+    console.log(`🔍 Checking completion for plan ${planId}:`, progress)
+
     if (!progress) {
-      return { isCompleted: false, status: 'not_started' };
+      return { isCompleted: false, status: "not_started" }
     }
-    
+
     if (progress.is_completed) {
       return {
         isCompleted: true,
-        status: 'completed',
+        status: "completed",
         score: progress.final_score || progress.score,
         grade: progress.final_letter_grade,
-        completedAt: progress.completed_at
-      };
+        completedAt: progress.completed_at,
+      }
     }
-    
+
     return {
       isCompleted: false,
-      status: 'in_progress',
-      progressStep: progress.progress_step
-    };
-  };
-
-  // Render completion badge
-  const renderCompletionBadge = (planId) => {
-    const completion = getCompletionStatus(planId);
-    
-    if (completion.status === 'completed') {
-      return (
-        <View style={styles.completionBadge}>
-          <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-          <Text style={styles.completionText}>
-            Completed {completion.grade ? `(${completion.grade})` : ''}
-          </Text>
-        </View>
-      );
-    } else if (completion.status === 'in_progress') {
-      return (
-        <View style={[styles.completionBadge, styles.inProgressBadge]}>
-          <Ionicons name="time-outline" size={16} color="#FF9800" />
-          <Text style={[styles.completionText, styles.inProgressText]}>
-            In Progress
-          </Text>
-        </View>
-      );
+      status: "in_progress",
+      progressStep: progress.progress_step,
     }
-    
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "completed":
+        return ["#10B981", "#34D399"]
+      case "in_progress":
+        return ["#F59E0B", "#FBBF24"]
+      default:
+        return ["#6B7280", "#9CA3AF"]
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "completed":
+        return "checkmark-circle"
+      case "in_progress":
+        return "time"
+      default:
+        return "play-circle-outline"
+    }
+  }
+
+  const renderCompletionBadge = (planId) => {
+    const completion = getCompletionStatus(planId)
+    const colors = getStatusColor(completion.status)
+    const icon = getStatusIcon(completion.status)
+
     return (
-      <View style={[styles.completionBadge, styles.notStartedBadge]}>
-        <Ionicons name="play-circle-outline" size={16} color="#666" />
-        <Text style={[styles.completionText, styles.notStartedText]}>
-          Not Started
+      <LinearGradient colors={colors} style={styles.completionBadge}>
+        <Ionicons name={icon} size={14} color="#FFFFFF" />
+        <Text style={styles.completionText}>
+          {completion.status === "completed"
+            ? `Completed ${completion.grade ? `(${completion.grade})` : ""}`
+            : completion.status === "in_progress"
+              ? "In Progress"
+              : "Not Started"}
         </Text>
-      </View>
-    );
-  };
+      </LinearGradient>
+    )
+  }
+
+  const PlanCard = ({ plan, index }) => {
+    const completion = getCompletionStatus(plan.id)
+    const cardAnim = cardAnimations[index] || { scale: new Animated.Value(1), opacity: new Animated.Value(1) }
+    const pressAnim = useRef(new Animated.Value(1)).current
+
+    const handlePressIn = () => {
+      Animated.spring(pressAnim, {
+        toValue: 0.95,
+        useNativeDriver: true,
+      }).start()
+    }
+
+    const handlePressOut = () => {
+      Animated.spring(pressAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start()
+    }
+
+    return (
+      <Animated.View
+        style={[
+          styles.planCard,
+          {
+            opacity: cardAnim.opacity,
+            transform: [{ scale: Animated.multiply(cardAnim.scale, pressAnim) }],
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={completion.isCompleted ? ["#F0FDF4", "#DCFCE7"] : ["#FFFFFF", "#F8FAFC"]}
+          style={styles.planCardGradient}
+        >
+          <View style={styles.planCardHeader}>
+            <LinearGradient
+              colors={getStatusColor(completion.status)}
+              style={styles.planIconContainer}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name={getStatusIcon(completion.status)} size={24} color="#FFFFFF" />
+            </LinearGradient>
+
+            <View style={styles.planHeaderInfo}>
+              <Text style={styles.planTitle}>{plan.plan_name || `Design Plan ${index + 1}`}</Text>
+              {renderCompletionBadge(plan.id)}
+            </View>
+          </View>
+
+          <Text style={styles.planDescription} numberOfLines={3}>
+            {plan.description || "No description available"}
+          </Text>
+
+          {completion.isCompleted && (
+            <View style={styles.completionDetails}>
+              {completion.completedAt && (
+                <View style={styles.completionDetailItem}>
+                  <Ionicons name="calendar-outline" size={14} color="#10B981" />
+                  <Text style={styles.completionDetailText}>
+                    {new Date(completion.completedAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+              {completion.score && (
+                <View style={styles.completionDetailItem}>
+                  <Ionicons name="trophy-outline" size={14} color="#10B981" />
+                  <Text style={styles.completionDetailText}>Score: {completion.score}/100</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.planButton}
+            onPress={() => handleStartDesign(plan)}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={completion.isCompleted ? ["#10B981", "#34D399"] : ["#4F46E5", "#7C3AED"]}
+              style={styles.planButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.planButtonText}>{completion.isCompleted ? "Review" : "Start"}</Text>
+              <Ionicons
+                name={completion.isCompleted ? "eye" : "play"}
+                size={16}
+                color="#FFFFFF"
+                style={{ marginLeft: 6 }}
+              />
+            </LinearGradient>
+          </TouchableOpacity>
+        </LinearGradient>
+      </Animated.View>
+    )
+  }
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#176BB7" />
-        <Text style={styles.loadingText}>Loading design plans...</Text>
+        <LinearGradient colors={["#F8FAFC", "#F1F5F9"]} style={styles.loadingGradient}>
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color="#4F46E5" />
+            <Text style={styles.loadingText}>Loading design plans...</Text>
+            <View style={styles.loadingDots}>
+              <View style={[styles.loadingDot, { animationDelay: "0s" }]} />
+              <View style={[styles.loadingDot, { animationDelay: "0.2s" }]} />
+              <View style={[styles.loadingDot, { animationDelay: "0.4s" }]} />
+            </View>
+          </View>
+        </LinearGradient>
       </View>
-    );
+    )
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Design Plans</Text>
-        {refreshing && (
-          <ActivityIndicator size="small" color="#FFFFFF" style={{ marginLeft: 8 }} />
-        )}
-      </View>
+      {/* Enhanced Header */}
+      <Animated.View style={[styles.headerContainer, { transform: [{ translateY: headerAnim }] }]}>
+        <LinearGradient
+          colors={["#4F46E5", "#7C3AED"]}
+          style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+              <LinearGradient colors={["rgba(255,255,255,0.2)", "rgba(255,255,255,0.1)"]} style={styles.backButtonBg}>
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Design Plans</Text>
+            {refreshing && <ActivityIndicator size="small" color="#FFFFFF" style={{ marginLeft: 8 }} />}
+          </View>
+        </LinearGradient>
+      </Animated.View>
 
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.card}>
-          {/* Class Banner */}
-          <ImageBackground
-            source={{ uri: 'https://images.unsplash.com/photo-1557683311-eac922347aa1?q=80&w=2429&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }}
-            style={styles.classBanner}
-            imageStyle={styles.classBannerImage}
-          >
-            <View style={styles.bannerOverlay}>
-              <Text style={styles.className}>
-                {classDetails?.class_name || `Class #${classId}`}
-              </Text>
-              <Text style={styles.classKey}>
-                Class Key: {classKey}
-              </Text>
-            </View>
-          </ImageBackground>
+      <Animated.View style={[styles.contentContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refreshStudentProgress}
+              colors={["#4F46E5"]}
+              tintColor="#4F46E5"
+            />
+          }
+        >
+          {/* Enhanced Class Banner */}
+          <View style={styles.bannerContainer}>
+            <ImageBackground
+              source={{
+                uri: "https://images.unsplash.com/photo-1557683311-eac922347aa1?q=80&w=2429&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+              }}
+              style={styles.classBanner}
+              imageStyle={styles.classBannerImage}
+            >
+              <LinearGradient
+                colors={["rgba(0,0,0,0.3)", "rgba(0,0,0,0.7)"]}
+                style={styles.bannerOverlay}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              >
+                <View style={styles.bannerContent}>
+                  <Text style={styles.className}>{classDetails?.class_name || `Class #${classId}`}</Text>
+                  <View style={styles.classKeyContainer}>
+                    <Ionicons name="key" size={16} color="rgba(255,255,255,0.9)" />
+                    <Text style={styles.classKey}>Class Key: {classKey}</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </ImageBackground>
+          </View>
 
-          {/* Class Info */}
-          <View style={styles.classInfo}>
+          {/* Enhanced Class Info */}
+          <LinearGradient colors={["#FFFFFF", "#F8FAFC"]} style={styles.classInfoCard}>
             {classDetails?.teachers && (
               <View style={styles.instructorContainer}>
-                <Ionicons name="school-outline" size={20} color="#176BB7" />
-                <Text style={styles.teacherName}>
-                  Instructor: {classDetails.teachers.first_name} {classDetails.teachers.last_name}
-                </Text>
+                <LinearGradient colors={["#4F46E5", "#7C3AED"]} style={styles.instructorIcon}>
+                  <Ionicons name="school" size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <View style={styles.instructorInfo}>
+                  <Text style={styles.instructorLabel}>Instructor</Text>
+                  <Text style={styles.teacherName}>
+                    {classDetails.teachers.first_name} {classDetails.teachers.last_name}
+                  </Text>
+                </View>
               </View>
             )}
-            
+
             <Text style={styles.classDescription}>
-              {classDetails?.class_description || "Work on design plans created by your instructor to enhance your understanding of architectural and construction concepts."}
+              {classDetails?.class_description ||
+                "Work on design plans created by your instructor to enhance your understanding of architectural and construction concepts."}
             </Text>
-          </View>
+          </LinearGradient>
 
-          {/* Debug Info
-          {__DEV__ && (
-            <View style={styles.debugInfo}>
-              <Text style={styles.debugText}>Debug Info:</Text>
-              <Text style={styles.debugText}>User ID: {userId}</Text>
-              <Text style={styles.debugText}>Class ID: {classId}</Text>
-              <Text style={styles.debugText}>Design Plans: {designPlans.length}</Text>
-              <Text style={styles.debugText}>Progress Records: {Object.keys(studentProgress).length}</Text>
-              
-              <TouchableOpacity 
-                style={styles.debugButton}
-                onPress={refreshStudentProgress}
-              >
-                <Text style={styles.debugButtonText}>Refresh Progress</Text>
-              </TouchableOpacity>
-            </View>
-          )} */}
-
-          {/* Design Plans */}
+          {/* Enhanced Design Plans Section */}
           <View style={styles.designPlanContainer}>
-            <View style={styles.sectionTitleContainer}>
-              <Ionicons name="document-text" size={22} color="#176BB7" />
-              <Text style={styles.sectionTitle}>Design Plans</Text>
-              <TouchableOpacity 
-                style={styles.refreshButton}
-                onPress={refreshStudentProgress}
-                disabled={refreshing}
-              >
-                <Ionicons 
-                  name="refresh" 
-                  size={20} 
-                  color={refreshing ? "#ccc" : "#176BB7"} 
-                />
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleContainer}>
+                <LinearGradient colors={["#4F46E5", "#7C3AED"]} style={styles.sectionIcon}>
+                  <Ionicons name="document-text" size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={styles.sectionTitle}>Design Plans</Text>
+              </View>
+              <TouchableOpacity style={styles.refreshButton} onPress={refreshStudentProgress} disabled={refreshing}>
+                <LinearGradient
+                  colors={refreshing ? ["#E5E7EB", "#F3F4F6"] : ["#4F46E5", "#7C3AED"]}
+                  style={styles.refreshButtonGradient}
+                >
+                  <Ionicons name="refresh" size={18} color={refreshing ? "#9CA3AF" : "#FFFFFF"} />
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-            
+
             {designPlans.length > 0 ? (
-              designPlans.map((plan, index) => {
-                const completion = getCompletionStatus(plan.id);
-                
-                return (
-                  <View key={plan.id || index} style={[
-                    styles.planItem,
-                    completion.isCompleted && styles.completedPlanItem
-                  ]}>
-                    <View style={styles.planIconContainer}>
-                      <Ionicons 
-                        name={completion.isCompleted ? "checkmark-circle" : "document-text-outline"} 
-                        size={28} 
-                        color={completion.isCompleted ? "#4CAF50" : "#176BB7"} 
-                      />
-                    </View>
-                    <View style={styles.planInfo}>
-                      <Text style={styles.planTitle}>
-                        {plan.plan_name || `Design Plan ${index + 1}`}
-                      </Text>
-                      <Text style={styles.planDescription} numberOfLines={2}>
-                        {plan.description || "No description available"}
-                      </Text>
-                      {renderCompletionBadge(plan.id)}
-                      {completion.isCompleted && completion.completedAt && (
-                        <Text style={styles.completedDate}>
-                          Completed: {new Date(completion.completedAt).toLocaleDateString()}
-                        </Text>
-                      )}
-                      {completion.isCompleted && completion.score && (
-                        <Text style={styles.scoreText}>
-                          Score: {completion.score}/100
-                        </Text>
-                      )}
-                    </View>
-                    <TouchableOpacity 
-                      style={[
-                        styles.planButton,
-                        completion.isCompleted && styles.completedPlanButton
-                      ]}
-                      onPress={() => handleStartDesign(plan)}
-                    >
-                      <Text style={[
-                        styles.planButtonText,
-                        completion.isCompleted && styles.completedPlanButtonText
-                      ]}>
-                        {completion.isCompleted ? "Review" : "Start"}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })
-            ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="document-outline" size={48} color="#B4D4FF" />
-                <Text style={styles.emptyStateText}>
-                  No design plans found for this class
-                </Text>
+              <View style={styles.plansGrid}>
+                {designPlans.map((plan, index) => (
+                  <PlanCard key={plan.id || index} plan={plan} index={index} />
+                ))}
               </View>
+            ) : (
+              <LinearGradient colors={["#F8FAFC", "#F1F5F9"]} style={styles.emptyState}>
+                <View style={styles.emptyStateContent}>
+                  <LinearGradient colors={["#E5E7EB", "#F3F4F6"]} style={styles.emptyStateIcon}>
+                    <Ionicons name="document-outline" size={48} color="#9CA3AF" />
+                  </LinearGradient>
+                  <Text style={styles.emptyStateTitle}>No Design Plans Yet</Text>
+                  <Text style={styles.emptyStateText}>
+                    Your instructor hasn't created any design plans for this class yet. Check back later!
+                  </Text>
+                </View>
+              </LinearGradient>
             )}
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
-  );
-};
+  )
+}
 
-// Styles remain the same as previous version
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EEF5FF',
+    backgroundColor: "#F8FAFC",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#EEF5FF',
+  },
+  loadingGradient: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContent: {
+    alignItems: "center",
   },
   loadingText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 12,
+    fontSize: 18,
+    color: "#64748B",
+    marginTop: 16,
+    fontWeight: "500",
+  },
+  loadingDots: {
+    flexDirection: "row",
+    marginTop: 20,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#4F46E5",
+    marginHorizontal: 4,
+    opacity: 0.3,
+  },
+  headerContainer: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  headerGradient: {
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#176BB7',
-    height: 60,
-    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   backButton: {
-    padding: 8,
+    marginRight: 16,
+  },
+  backButtonBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 16,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    flex: 1,
+  },
+  contentContainer: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
   },
-  card: {
-    margin: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  bannerContainer: {
+    margin: 20,
+    marginBottom: 0,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   classBanner: {
-    height: 180,
-    justifyContent: 'flex-end',
+    height: 200,
+    justifyContent: "flex-end",
   },
   classBannerImage: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderRadius: 16,
   },
   bannerOverlay: {
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    padding: 16,
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  bannerContent: {
+    padding: 20,
   },
   className: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 8,
+  },
+  classKeyContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   classKey: {
     fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
+    color: "rgba(255,255,255,0.9)",
+    marginLeft: 6,
+    fontWeight: "500",
   },
-  classInfo: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF5FF',
+  classInfoCard: {
+    margin: 20,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   instructorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  instructorIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  instructorInfo: {
+    flex: 1,
+  },
+  instructorLabel: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   teacherName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginLeft: 8,
+    fontWeight: "600",
+    color: "#1E293B",
+    marginTop: 2,
   },
   classDescription: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#666',
-  },
-  debugInfo: {
-    backgroundColor: '#FFF3E0',
-    padding: 12,
-    margin: 16,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#E65100',
-    marginBottom: 2,
-  },
-  debugButton: {
-    backgroundColor: '#FFE0B2',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  debugButtonText: {
-    fontSize: 12,
-    color: '#E65100',
-    fontWeight: '600',
+    fontSize: 15,
+    lineHeight: 24,
+    color: "#64748B",
   },
   designPlanContainer: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 0,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
   sectionTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#176BB7',
-    marginLeft: 8,
-    flex: 1,
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#1E293B",
   },
   refreshButton: {
-    padding: 8,
+    borderRadius: 20,
   },
-  planItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#F8FAFF',
-    padding: 12,
-    borderRadius: 8,
+  refreshButtonGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  plansGrid: {
+    gap: 16,
+  },
+  planCard: {
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  planCardGradient: {
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+  },
+  planCardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#B4D4FF',
-  },
-  completedPlanItem: {
-    backgroundColor: '#F0F8F0',
-    borderLeftColor: '#4CAF50',
   },
   planIconContainer: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#EEF5FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
   },
-  planInfo: {
+  planHeaderInfo: {
     flex: 1,
   },
   planTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  planDescription: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1E293B",
     marginBottom: 8,
   },
   completionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E8',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  inProgressBadge: {
-    backgroundColor: '#FFF3E0',
-  },
-  notStartedBadge: {
-    backgroundColor: '#F5F5F5',
+    alignSelf: "flex-start",
   },
   completionText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#4CAF50',
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginLeft: 4,
   },
-  inProgressText: {
-    color: '#FF9800',
+  planDescription: {
+    fontSize: 15,
+    color: "#64748B",
+    lineHeight: 22,
+    marginBottom: 16,
   },
-  notStartedText: {
-    color: '#666',
+  completionDetails: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 16,
+    gap: 12,
   },
-  completedDate: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontStyle: 'italic',
-    marginBottom: 2,
+  completionDetailItem: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  scoreText: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '600',
+  completionDetailText: {
+    fontSize: 13,
+    color: "#10B981",
+    fontWeight: "500",
+    marginLeft: 4,
   },
   planButton: {
-    backgroundColor: '#B4D4FF',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    marginTop: 8,
+    borderRadius: 12,
   },
-  completedPlanButton: {
-    backgroundColor: '#C8E6C9',
+  planButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
   },
   planButtonText: {
-    color: '#1E4F91',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  completedPlanButtonText: {
-    color: '#2E7D32',
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 16,
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#F8FAFF',
-    borderRadius: 8,
+    borderRadius: 16,
+    padding: 40,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    borderStyle: "dashed",
+  },
+  emptyStateContent: {
+    alignItems: "center",
+  },
+  emptyStateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 8,
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 24,
   },
-});
+})
 
-export default DesignPlanViewer;
+export default DesignPlanViewer
