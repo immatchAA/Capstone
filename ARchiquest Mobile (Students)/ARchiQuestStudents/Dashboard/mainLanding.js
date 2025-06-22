@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -47,13 +46,6 @@ const MainLanding = () => {
   const scaleAnim = useRef(new Animated.Value(0.9)).current
   const headerAnim = useRef(new Animated.Value(-100)).current
 
-
-  const onRefresh = async () => {
-  setRefreshing(true);
-  await fetchStudentName();
-  await fetchActiveClasses();
-  setRefreshing(false);
-};
 
 
   useEffect(() => {
@@ -750,7 +742,9 @@ const MainLanding = () => {
 
 
               <View style={styles.mobileSideNavContent}>
-                <TouchableOpacity style={styles.mobileSideNavItem}>
+                <TouchableOpacity style={styles.mobileSideNavItem}
+                onPress={() => navigation.navigate("Profile")}
+                >
                   <Ionicons name="person" size={24} color="#4F46E5" />
                   <Text style={styles.mobileSideNavText}>Profile</Text>
                 </TouchableOpacity>
@@ -766,7 +760,9 @@ const MainLanding = () => {
 
 
 
-                <TouchableOpacity style={styles.mobileSideNavItem}>
+                <TouchableOpacity style={styles.mobileSideNavItem}
+                onPress={() => navigation.navigate("Settings")}
+                >
                   <Ionicons name="settings" size={24} color="#4F46E5" />
                   <Text style={styles.mobileSideNavText}>Settings</Text>
                 </TouchableOpacity>
@@ -862,7 +858,7 @@ const MainLanding = () => {
           </TouchableOpacity>
 
 
-          <TouchableOpacity style={styles.sidebarMenuItem}>
+          <TouchableOpacity style={styles.sidebarMenuItem} onPress={() => navigation.navigate("Profile")}>
             <Ionicons name="person-outline" size={24} color="#64748B" />
 
           </TouchableOpacity>
@@ -875,7 +871,7 @@ const MainLanding = () => {
             <Ionicons name="code-outline" size={24} color="#64748B" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.sidebarMenuItem}>
+          <TouchableOpacity style={styles.sidebarMenuItem} onPress={() => navigation.navigate("Settings")}>
             <Ionicons name="settings-outline" size={24} color="#64748B" />
 
 
