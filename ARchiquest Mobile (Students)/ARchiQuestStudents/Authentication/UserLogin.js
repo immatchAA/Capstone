@@ -1,74 +1,335 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
-  KeyboardAvoidingView, 
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
   ActivityIndicator,
-  Dimensions,
-  StatusBar
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+  StatusBar,
+  Animated,
+  useWindowDimensions,
+  Vibration,
+  Easing,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { LinearGradient } from "expo-linear-gradient"
+import { BlurView } from "expo-blur"
 import { supabase } from '../supabaseClient';
 
-const { width, height } = Dimensions.get('window');
-
-const UserLogin = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [errors, setErrors] = useState({
-    email: '',
-    password: '',
-  });
+const AnimatedInput = ({
+  label,
+  value,
+  onChangeText,
+  secureTextEntry,
+  keyboardType = "default",
+  rightIcon,
+  error,
+  autoCapitalize = "none",
+  icon,
+  onFocus,
+  onBlur,
+}) => {
+  const [isFocused, setIsFocused] = useState(false)
+  const animatedValue = useRef(new Animated.Value(0)).current
+  const shakeAnimation = useRef(new Animated.Value(0)).current
+  const glowAnimation = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      setEmail('');
-      setPassword('');
-      setErrors({ email: '', password: '' });
-    });
+    Animated.parallel([
+      Animated.timing(animatedValue, {
+        toValue: isFocused || value ? 1 : 0,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(glowAnimation, {
+        toValue: isFocused ? 1 : 0,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start()
+  }, [isFocused, value])
 
-    return unsubscribe;
-  }, [navigation]);
+  useEffect(() => {
+    if (error) {
+      Animated.sequence([
+        Animated.timing(shakeAnimation, {
+          toValue: 10,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnimation, {
+          toValue: -10,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnimation, {
+          toValue: 10,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnimation, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start()
+    }
+  }, [error])
+
+  const handleFocus = () => {
+    setIsFocused(true)
+    onFocus && onFocus()
+  }
+
+  const handleBlur = () => {
+    setIsFocused(false)
+    onBlur && onBlur()
+  }
+
+  return (
+    <Animated.View
+      style={[
+        styles.inputWrapper,
+        {
+          transform: [{ translateX: shakeAnimation }],
+          shadowColor: glowAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: ["transparent", "#4ECDC4"],
+          }),
+          shadowOpacity: glowAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 0.3],
+          }),
+          shadowRadius: glowAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 10],
+          }),
+          elevation: glowAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [2, 8],
+          }),
+        },
+      ]}
+    >
+      <BlurView intensity={30} style={[styles.inputContainer, error && styles.inputError]}>
+        {icon && <View style={styles.inputIcon}>{icon}</View>}
+        <Animated.Text
+          style={[
+            styles.floatingLabel,
+            {
+              transform: [
+                {
+                  translateY: animatedValue.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -25],
+                  }),
+                },
+                {
+                  scale: animatedValue.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 0.8],
+                  }),
+                },
+              ],
+              color: error
+                ? "#FF6B6B"
+                : animatedValue.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["#FFFFFF80", "#4ECDC4"],
+                  }),
+            },
+          ]}
+        >
+          {label}
+        </Animated.Text>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType}
+          style={[styles.input, icon && styles.inputWithIcon]}
+          autoCapitalize={autoCapitalize}
+          placeholderTextColor="transparent"
+        />
+        {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
+      </BlurView>
+    </Animated.View>
+  )
+}
+
+const EnhancedUserLogin = ({ navigation }) => {
+  const { width, height, fontScale } = useWindowDimensions()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [errors, setErrors] = useState({ email: "", password: "" })
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const slideAnim = useRef(new Animated.Value(50)).current
+  const buttonAnim = useRef(new Animated.Value(0)).current
+  const logoAnim = useRef(new Animated.Value(0)).current
+  const particleAnims = useRef(Array.from({ length: 8 }, () => new Animated.Value(0))).current
+  const pulseAnim = useRef(new Animated.Value(1)).current
+  const rotateAnim = useRef(new Animated.Value(0)).current
+
+  // Responsive calculations
+  const isTablet = width >= 768
+  const isLandscape = width > height
+  const isSmallDevice = width < 375
+
+  const getResponsiveSize = (baseSize) => {
+    const deviceMultiplier = isTablet ? 1.3 : isSmallDevice ? 0.85 : 1
+    return (baseSize * deviceMultiplier) / fontScale
+  }
+
+  const getResponsiveSpacing = (baseSpacing) => {
+    const deviceMultiplier = isTablet ? 1.5 : isSmallDevice ? 0.8 : 1
+    return baseSpacing * deviceMultiplier
+  }
+
+  useEffect(() => {
+    // Entrance animations
+    Animated.sequence([
+      Animated.spring(logoAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          tension: 80,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.spring(buttonAnim, {
+        toValue: 1,
+        tension: 120,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      startContinuousAnimations()
+    })
+
+    // Clear form on focus
+    const unsubscribe = navigation.addListener("focus", () => {
+      setEmail("")
+      setPassword("")
+      setErrors({ email: "", password: "" })
+    })
+
+    return unsubscribe
+  }, [navigation])
+
+  const startContinuousAnimations = () => {
+    // Particle animation
+    particleAnims.forEach((anim, index) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(index * 300),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 4000 + index * 200,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start()
+    })
+
+    // Pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 2000,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start()
+
+    // Rotation animation
+    Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 20000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    ).start()
+  }
 
   const handleLogin = async () => {
-    let isValid = true;
-    const newErrors = { email: '', password: '' };
-  
+    let isValid = true
+    const newErrors = { email: "", password: "" }
+
     if (!email) {
-      newErrors.email = 'Email is required';
-      isValid = false;
+      newErrors.email = "Email is required"
+      isValid = false
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email address';
-      isValid = false;
+      newErrors.email = "Please enter a valid email address"
+      isValid = false
     }
-  
+
     if (!password) {
-      newErrors.password = 'Password is required';
-      isValid = false;
+      newErrors.password = "Password is required"
+      isValid = false
     }
-  
-    setErrors(newErrors);
-  
+
+    setErrors(newErrors)
+
     if (isValid) {
-      setIsLoading(true);
-      
+      setIsLoading(true)
+
+      // Haptic feedback
+      if (Platform.OS === "ios") {
+        Vibration.vibrate(10)
+      }
+
       try {
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+
+        // Replace with actual Supabase authentication
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
-      
+        
         if (error) {
           alert('Login failed: ' + error.message);
           return;
@@ -80,358 +341,557 @@ const UserLogin = ({ navigation }) => {
           .select('role')
           .eq('id', user.id)
           .single();
-      
+        
         if (profileError) {
           alert('Error fetching user profile: ' + profileError.message);
           return;
         }
-      
+        
         if (userProfile.role !== 'student' && userProfile.role !== 'Student') {
           alert('Access denied. Only students can log in.');
           await supabase.auth.signOut();
         } else {
           navigation.navigate('MainTabs');
         }
+        
+
+        // For demo purposes
+        navigation.navigate("MainLanding")
       } catch (error) {
-        alert('An unexpected error occurred. Please try again.');
-        console.error(error);
+        alert("An unexpected error occurred. Please try again.")
+        console.error(error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
-  };
+  }
 
   const handleForgotPassword = async () => {
     if (!email) {
       setErrors({
         ...errors,
-        email: 'Please enter your email to reset password'
-      });
-      return;
+        email: "Please enter your email to reset password",
+      })
+      return
     }
-    
+
     if (!/\S+@\S+\.\S+/.test(email)) {
       setErrors({
         ...errors,
-        email: 'Please enter a valid email address'
-      });
-      return;
+        email: "Please enter a valid email address",
+      })
+      return
     }
-    
-    setIsLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
 
-      if (error) {
-        alert('Error: ' + error.message);
-      } else {
-        alert('Password reset email sent! Please check your inbox.');
-      }
+    setIsLoading(true)
+
+    try {
+      // Replace with actual Supabase call
+      // const { error } = await supabase.auth.resetPasswordForEmail(email);
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      alert("Password reset email sent! Please check your inbox.")
     } catch (error) {
-      alert('An unexpected error occurred. Please try again.');
-      console.error(error);
+      alert("An unexpected error occurred. Please try again.")
+      console.error(error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  const renderParticles = () => {
+    return particleAnims.map((anim, index) => (
+      <Animated.View
+        key={index}
+        style={[
+          styles.particle,
+          {
+            left: `${10 + index * 12}%`,
+            top: `${20 + index * 8}%`,
+            opacity: anim,
+            transform: [
+              {
+                translateY: anim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -150],
+                }),
+              },
+              {
+                scale: anim.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0, 1, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
+    ))
+  }
+
+  const renderDecorativeElements = () => (
+    <>
+      <Animated.View
+        style={[
+          styles.decorativeShape,
+          styles.shape1,
+          {
+            transform: [
+              {
+                rotate: rotateAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0deg", "360deg"],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.decorativeShape,
+          styles.shape2,
+          {
+            transform: [
+              {
+                rotate: rotateAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["360deg", "0deg"],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
+    </>
+  )
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#EEF5FF" />
-      
-      <LinearGradient
-        colors={['#EEF5FF', '#B4D4FF']}
-        style={styles.gradient}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoidingView}
-        >
-          <ScrollView 
-            contentContainerStyle={styles.scrollContainer}
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+      <LinearGradient colors={["#667eea", "#764ba2", "#f093fb"]} style={styles.gradient}>
+        {renderDecorativeElements()}
+        {renderParticles()}
+
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardView}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContainer,
+              {
+                paddingHorizontal: getResponsiveSpacing(20),
+                paddingTop: getResponsiveSpacing(Platform.OS === "android" ? 60 : 40),
+              },
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#176B87" />
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <BlurView intensity={30} style={styles.backButtonBlur}>
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </BlurView>
             </TouchableOpacity>
-            
-            <View style={styles.headerContainer}>
-              {/* <Image
-                source={require('../assets/logo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              /> */}
-              <Text style={styles.title}>ARchiQuest</Text>
-              <Text style={styles.subtitle}>Sign in to continue your architectural journey</Text>
-            </View>
-            
-            <View style={styles.formContainer}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <View style={[styles.inputContainer, errors.email ? styles.inputError : null]}>
-                  <Ionicons name="mail-outline" size={20} color="#176B87" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="email@example.com"
-                    keyboardType="email-address"
-                    value={email}
-                    onChangeText={(text) => {
-                      setEmail(text);
-                      if (errors.email) {
-                        setErrors({...errors, email: ''});
-                      }
-                    }}
-                    autoCapitalize="none"
-                  />
-                </View>
-                {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
-              </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <View style={[styles.inputContainer, errors.password ? styles.inputError : null]}>
-                  <Ionicons name="lock-closed-outline" size={20} color="#176B87" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="••••••••"
-                    secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      if (errors.password) {
-                        setErrors({...errors, password: ''});
-                      }
-                    }}
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color="#176B87"
-                    />
+            {/* Header */}
+            <Animated.View
+              style={[
+                styles.headerContainer,
+                {
+                  opacity: logoAnim,
+                  transform: [{ scale: logoAnim }],
+                  marginTop: getResponsiveSpacing(isLandscape ? 20 : 40),
+                  marginBottom: getResponsiveSpacing(40),
+                },
+              ]}
+            >
+              <View style={styles.logoWrapper}>
+                <LinearGradient colors={["#FF6B6B", "#4ECDC4", "#45B7D1"]} style={styles.logoGradient}>
+                  <Ionicons name="business-outline" size={getResponsiveSize(40)} color="#FFFFFF" />
+                </LinearGradient>
+              </View>
+              <Text style={[styles.title, { fontSize: getResponsiveSize(32) }]}>Welcome Back</Text>
+              <Text style={[styles.subtitle, { fontSize: getResponsiveSize(16) }]}>
+                Sign in to continue your architectural journey
+              </Text>
+            </Animated.View>
+
+            {/* Form */}
+            <Animated.View
+              style={[
+                styles.formContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                  maxWidth: isTablet ? 400 : "100%",
+                  alignSelf: "center",
+                  width: "100%",
+                },
+              ]}
+            >
+              <AnimatedInput
+                label="Email"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text)
+                  if (errors.email) setErrors({ ...errors, email: "" })
+                }}
+                keyboardType="email-address"
+                error={errors.email}
+                icon={<Ionicons name="mail-outline" size={20} color="#4ECDC4" />}
+              />
+              {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+
+              <AnimatedInput
+                label="Password"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text)
+                  if (errors.password) setErrors({ ...errors, password: "" })
+                }}
+                secureTextEntry={!showPassword}
+                error={errors.password}
+                icon={<Ionicons name="lock-closed-outline" size={20} color="#4ECDC4" />}
+                rightIcon={
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#FFFFFF80" />
                   </TouchableOpacity>
-                </View>
-                {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
-              </View>
+                }
+              />
+              {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
 
-              <TouchableOpacity 
-                onPress={handleForgotPassword} 
-                style={styles.forgotPasswordContainer}
-              >
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              {/* Forgot Password */}
+              <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
+                <Text style={[styles.forgotPasswordText, { fontSize: getResponsiveSize(14) }]}>Forgot Password?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.loginButton} 
-                onPress={handleLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="log-in-outline" size={20} color="#fff" style={styles.buttonIcon} />
-                    <Text style={styles.loginButtonText}>Sign In</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-                <Text style={styles.dividerText}>OR</Text>
-                <View style={styles.divider} />
-              </View>
-
-              <View style={styles.signUpContainer}>
-                <Text style={styles.signUpText}>Don't have an account yet?</Text>
-                <TouchableOpacity 
-                  onPress={() => navigation.navigate('UserRegister')}
-                  style={styles.signUpButton}
+              {/* Login Button */}
+              <Animated.View style={[styles.buttonContainer, { opacity: buttonAnim }]}>
+                <TouchableOpacity
+                  style={[
+                    styles.loginButton,
+                    {
+                      paddingVertical: getResponsiveSpacing(18),
+                    },
+                  ]}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.signUpButtonText}>Create Account</Text>
+                  <LinearGradient
+                    colors={["#FF6B6B", "#FF8E53"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.buttonGradient}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="log-in-outline" size={24} color="#FFFFFF" />
+                        <Text style={[styles.buttonText, { fontSize: getResponsiveSize(18) }]}>Sign In</Text>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Divider */}
+              <View style={[styles.dividerContainer, { marginVertical: getResponsiveSpacing(30) }]}>
+                <LinearGradient
+                  colors={["transparent", "#FFFFFF40", "transparent"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.dividerLine}
+                />
+                <BlurView intensity={20} style={styles.dividerTextContainer}>
+                  <Text style={[styles.dividerText, { fontSize: getResponsiveSize(14) }]}>OR</Text>
+                </BlurView>
+                <LinearGradient
+                  colors={["transparent", "#FFFFFF40", "transparent"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.dividerLine}
+                />
+              </View>
+
+              {/* Sign Up Link */}
+              <View style={styles.signUpContainer}>
+                <Text style={[styles.signUpText, { fontSize: getResponsiveSize(16) }]}>Don't have an account yet?</Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("UserRegister")}
+                  style={[
+                    styles.signUpButton,
+                    {
+                      paddingVertical: getResponsiveSpacing(12),
+                      paddingHorizontal: getResponsiveSpacing(20),
+                    },
+                  ]}
+                >
+                  <BlurView intensity={30} style={styles.signUpButtonBlur}>
+                    <Text style={[styles.signUpButtonText, { fontSize: getResponsiveSize(16) }]}>Create Account</Text>
+                  </BlurView>
                 </TouchableOpacity>
               </View>
-            </View>
-            
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                By signing in, you agree to our Terms of Service and Privacy Policy
-              </Text>
-            </View>
+            </Animated.View>
+
+            {/* Footer */}
+            <Animated.View style={[styles.footer, { opacity: fadeAnim, marginTop: getResponsiveSpacing(40) }]}>
+              <BlurView intensity={20} style={styles.footerBlur}>
+                <Text style={[styles.footerText, { fontSize: getResponsiveSize(12) }]}>
+                  By signing in, you agree to our Terms of Service and Privacy Policy
+                </Text>
+              </BlurView>
+            </Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
   },
   gradient: {
     flex: 1,
   },
-  keyboardAvoidingView: {
+  keyboardView: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: 20,
-    paddingTop: Platform.OS === 'android' ? 40 : 20,
   },
+
+  // Decorative elements
+  decorativeShape: {
+    position: "absolute",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 20,
+  },
+  shape1: {
+    width: 100,
+    height: 100,
+    top: "10%",
+    right: "5%",
+    borderRadius: 50,
+  },
+  shape2: {
+    width: 80,
+    height: 80,
+    top: "70%",
+    left: "10%",
+    borderRadius: 40,
+  },
+  particle: {
+    position: "absolute",
+    width: 4,
+    height: 4,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 2,
+  },
+
+  // Back button
   backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 40 : 20,
+    position: "absolute",
+    top: Platform.OS === "android" ? 60 : 40,
     left: 20,
     zIndex: 10,
-    padding: 8,
+    borderRadius: 25,
+    overflow: "hidden",
   },
+  backButtonBlur: {
+    padding: 12,
+  },
+
+  // Header
   headerContainer: {
-    alignItems: 'center',
-    marginTop: height * 0.08,
-    marginBottom: height * 0.04,
+    alignItems: "center",
   },
-  logo: {
-    width: width * 0.25,
-    height: width * 0.25,
-    marginBottom: 10,
-  },
-  title: { 
-    fontSize: 28, 
-    fontWeight: 'bold', 
-    color: '#176B87',
-    marginBottom: 8,
-  },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#555', 
-    textAlign: 'center',
-    maxWidth: '80%',
-  },
-  formContainer: {
-    width: '100%',
-    marginTop: 20,
-  },
-  inputGroup: {
+  logoWrapper: {
     marginBottom: 20,
   },
-  label: { 
-    fontSize: 16, 
-    fontWeight: '500',
-    color: '#176B87',
+  logoGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  title: {
+    fontWeight: "900",
+    color: "#FFFFFF",
+    textAlign: "center",
     marginBottom: 8,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  subtitle: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    opacity: 0.9,
+    fontWeight: "400",
+  },
+
+  // Form
+  formContainer: {
+    width: "100%",
+  },
+  inputWrapper: {
+    marginBottom: 20,
+    borderRadius: 15,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     borderWidth: 1,
-    borderRadius: 12,
-    borderColor: '#B4D4FF',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    paddingHorizontal: 12,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    position: "relative",
+    overflow: "hidden",
   },
   inputError: {
-    borderColor: '#FF6B6B',
-    borderWidth: 1.5,
+    borderColor: "#FF6B6B",
+    borderWidth: 2,
+  },
+  floatingLabel: {
+    position: "absolute",
+    left: 50,
+    top: 20,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  input: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    paddingLeft: 30,
+    paddingTop: 5,
+  },
+  inputWithIcon: {
+    paddingLeft: 30,
   },
   inputIcon: {
-    marginRight: 10,
+    position: "absolute",
+    left: 20,
+    top: 20,
   },
-  input: { 
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#333',
-  },
-  eyeIcon: { 
-    padding: 10,
+  rightIcon: {
+    position: "absolute",
+    right: 20,
+    top: 20,
   },
   errorText: {
-    color: '#FF6B6B',
+    color: "#FF6B6B",
     fontSize: 14,
-    marginTop: 5,
+    marginTop: -15,
+    marginBottom: 15,
     marginLeft: 5,
+    fontWeight: "500",
   },
-  forgotPasswordContainer: { 
-    alignSelf: 'flex-end',
+
+  // Forgot password
+  forgotPasswordContainer: {
+    alignSelf: "flex-end",
+    marginBottom: 30,
+  },
+  forgotPasswordText: {
+    color: "#4ECDC4",
+    fontWeight: "600",
+  },
+
+  // Button
+  buttonContainer: {
     marginBottom: 20,
   },
-  forgotPasswordText: { 
-    color: '#176B87',
-    fontWeight: '500',
+  loginButton: {
+    borderRadius: 25,
+    overflow: "hidden",
+    shadowColor: "#FF6B6B",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 8,
   },
-  loginButton: { 
-    backgroundColor: '#176B87', 
-    paddingVertical: 15, 
-    borderRadius: 12, 
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+  buttonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 30,
   },
-  loginButtonText: { 
-    color: '#fff', 
-    fontSize: 18, 
-    fontWeight: '600',
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    marginLeft: 12,
+    letterSpacing: 1,
   },
-  buttonIcon: {
-    marginRight: 10,
-  },
+
+  // Divider
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 25,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  divider: {
+  dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#B4D4FF',
+  },
+  dividerTextContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 15,
+    overflow: "hidden",
   },
   dividerText: {
-    paddingHorizontal: 15,
-    color: '#666',
-    fontWeight: '500',
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
-  signUpContainer: { 
-    alignItems: 'center',
+
+  // Sign up
+  signUpContainer: {
+    alignItems: "center",
   },
   signUpText: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 12,
+    color: "#FFFFFF",
+    marginBottom: 15,
+    opacity: 0.9,
   },
   signUpButton: {
-    borderWidth: 1.5,
-    borderColor: '#176B87',
-    borderRadius: 12,
+    borderRadius: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  signUpButtonBlur: {
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
   signUpButtonText: {
-    color: '#176B87',
-    fontSize: 16,
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
+
+  // Footer
   footer: {
-    marginTop: 30,
-    alignItems: 'center',
+    alignItems: "center",
+    paddingBottom: 20,
+  },
+  footerBlur: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderRadius: 15,
+    overflow: "hidden",
   },
   footerText: {
-    color: '#666',
-    fontSize: 12,
-    textAlign: 'center',
+    color: "#FFFFFF",
+    textAlign: "center",
+    opacity: 0.8,
   },
-});
+})
 
-export default UserLogin;
+export default EnhancedUserLogin
