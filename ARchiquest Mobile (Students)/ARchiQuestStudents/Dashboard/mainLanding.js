@@ -338,48 +338,6 @@ const MainLanding = () => {
           ) : (
             <Text style={styles.mobileNoClassesText}>No active classes found</Text>
           )}
-          
-          <Text style={styles.mobileSectionTitle}>Learning Activities</Text>
-          
-          <TouchableOpacity 
-            style={styles.mobileActivityCard}
-            onPress={() => setShowCostEstimator(true)}
-          >
-            <View style={styles.mobileActivityImageContainer}>
-              <View style={[styles.mobileActivityImagePlaceholder, { backgroundColor: '#E0EDFF' }]}>
-                <Ionicons name="calculator-outline" size={30} color="#176BB7" />
-              </View>
-            </View>
-            <View style={styles.mobileActivityInfo}>
-              <Text style={styles.mobileActivityName}>Cost Estimate Simulator</Text>
-              <Text style={styles.mobileActivityDescription} numberOfLines={2}>
-                Estimate construction costs and manage project budgets
-              </Text>
-              <TouchableOpacity 
-                style={styles.mobileActivityButton}
-                onPress={() => setShowCostEstimator(true)}
-              >
-                <Text style={styles.mobileActivityButtonText}>START</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.mobileActivityCard}>
-            <View style={styles.mobileActivityImageContainer}>
-              <View style={[styles.mobileActivityImagePlaceholder, { backgroundColor: '#FFE5E5' }]}>
-                <Ionicons name="search-outline" size={30} color="#FF6B6B" />
-              </View>
-            </View>
-            <View style={styles.mobileActivityInfo}>
-              <Text style={styles.mobileActivityName}>AR Scavenger Hunt</Text>
-              <Text style={styles.mobileActivityDescription} numberOfLines={2}>
-                Find architectural elements in your environment
-              </Text>
-              <TouchableOpacity style={styles.mobileActivityButton}>
-                <Text style={styles.mobileActivityButtonText}>START</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
         </ScrollView>
         
     {/* Mobile Side Navigation */}

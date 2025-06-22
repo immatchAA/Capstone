@@ -297,6 +297,9 @@ const DesignPlanDetails = ({ route, navigation }) => {
   const [floorArea, setFloorArea] = useState(0)
   const [showOptimizationTips, setShowOptimizationTips] = useState(false)
 
+  // Add this new state after the existing state declarations around line 680
+  const [completedMaterials, setCompletedMaterials] = useState([])
+
   //Image Preview
   const [isImageModalVisible, setIsImageModalVisible] = useState(false)
 
@@ -424,12 +427,85 @@ const DesignPlanDetails = ({ route, navigation }) => {
         
         // Set other completion-related state
         setCurrentProgress(progressSteps.length - 1);
+        
+        // Fetch the completed materials
+        fetchCompletedMaterials(designPlanId);
       } else {
         console.log('📝 Design plan not completed yet');
         setIsCompleted(false);
       }
     } catch (err) {
       console.error("❌ Exception in checkCompletionStatus:", err);
+    }
+  };
+
+  // Add this function after checkCompletionStatus function around line 750
+  const fetchCompletedMaterials = async (designPlanId) => {
+    try {
+      if (!userId || !designPlanId) return;
+      
+      console.log('🔍 Fetching completed materials for plan:', designPlanId);
+      
+      // First get the cost estimate for this student and design plan
+      const { data: estimateData, error: estimateError } = await supabase
+        .from("cost_estimates")
+        .select("id")
+        .eq("student_id", userId)
+        .eq("design_plan_id", designPlanId)
+        .eq("status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (estimateError) {
+        console.error("❌ Error fetching cost estimate:", estimateError);
+        return;
+      }
+
+      if (estimateData) {
+        // Get the estimate items with material details
+        const { data: itemsData, error: itemsError } = await supabase
+          .from("cost_estimate_items")
+          .select(`
+            *,
+            materials (
+              id,
+              material_name,
+              description,
+              category,
+              unit
+            )
+          `)
+          .eq("estimate_id", estimateData.id);
+
+        if (itemsError) {
+          console.error("❌ Error fetching estimate items:", itemsError);
+          return;
+        }
+
+        if (itemsData && itemsData.length > 0) {
+          // Transform the data to match the expected format
+          const transformedMaterials = itemsData.map(item => ({
+            id: item.materials.id,
+            material_name: item.materials.material_name,
+            description: item.materials.description,
+            category: item.materials.category,
+            unit: item.materials.unit,
+            price: item.unit_price,
+            quantity: item.quantity,
+            total_price: item.total_price
+          }));
+
+          console.log('✅ Completed materials fetched:', transformedMaterials);
+          setCompletedMaterials(transformedMaterials);
+          
+          // Also update the total cost from completed data
+          const totalCost = transformedMaterials.reduce((sum, material) => sum + material.total_price, 0);
+          setTotalEstimatedCost(totalCost);
+        }
+      }
+    } catch (err) {
+      console.error("❌ Exception in fetchCompletedMaterials:", err);
     }
   };
 
@@ -1976,12 +2052,11 @@ const DesignPlanDetails = ({ route, navigation }) => {
                   <Text style={styles.completionStatValue}>{completionData.budget_utilization}%</Text>
                 </View>
               </View>
-              {/* Materials Summary in Completion Banner */}
-              {completionData && selectedMaterials.length > 0 && (
+              {completionData && completedMaterials.length > 0 && (
                 <View style={styles.completionMaterialsSection}>
                   <Text style={styles.completionMaterialsTitle}>Materials Selected</Text>
                   <View style={styles.completionMaterialsList}>
-                    {selectedMaterials.slice(0, 5).map((material, index) => (
+                    {completedMaterials.slice(0, 5).map((material, index) => (
                       <View key={index} style={styles.completionMaterialItem}>
                         <Text style={styles.completionMaterialName} numberOfLines={1}>
                           {material.material_name}
@@ -1991,9 +2066,9 @@ const DesignPlanDetails = ({ route, navigation }) => {
                         </Text>
                       </View>
                     ))}
-                    {selectedMaterials.length > 5 && (
+                    {completedMaterials.length > 5 && (
                       <Text style={styles.completionMaterialsMore}>
-                        +{selectedMaterials.length - 5} more materials
+                        +{completedMaterials.length - 5} more materials
                       </Text>
                     )}
                   </View>
@@ -2001,7 +2076,7 @@ const DesignPlanDetails = ({ route, navigation }) => {
                   <View style={styles.completionCostBreakdown}>
                     <View style={styles.completionCostRow}>
                       <Text style={styles.completionCostLabel}>Total Materials:</Text>
-                      <Text style={styles.completionCostValue}>{selectedMaterials.length} items</Text>
+                      <Text style={styles.completionCostValue}>{completedMaterials.length} items</Text>
                     </View>
                     <View style={styles.completionCostRow}>
                       <Text style={styles.completionCostLabel}>Materials Cost:</Text>
@@ -2205,39 +2280,62 @@ const DesignPlanDetails = ({ route, navigation }) => {
           {/* Selected Materials Summary */}
           <View style={styles.summarySection}>
             <Text style={styles.sectionTitle}>Materials Summary</Text>
-
-            <View style={styles.summaryTable}>
-              <View style={styles.summaryTableHeader}>
-                <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Material</Text>
-                <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>Qty</Text>
-                <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>Price</Text>
-                <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>Total</Text>
-                <Text style={[styles.summaryTableCell, styles.summaryTableCategory]}>Category</Text>
-              </View>
-
-              {selectedMaterials.map((material, index) => (
-                <View key={index} style={styles.summaryTableRow}>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]} numberOfLines={1}>
-                    {material.material_name}
-                  </Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>{material.quantity}</Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>
-                    {formatCurrency(material.price, currency)}
-                  </Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>
-                    {formatCurrency(material.price * material.quantity, currency)}
-                  </Text>
-                  <Text style={[styles.summaryTableCell, styles.summaryTableCategory]}>{material.category || "—"}</Text>
-                </View>
-              ))}
-
-              <View style={styles.summaryTableFooter}>
-                <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Total Estimated Cost</Text>
-                <Text style={[styles.summaryTableCell, styles.summaryTableTotal, styles.summaryTableTotalValue]}>
-                  {formatCurrency(totalEstimatedCost, currency)}
+            
+            {isCompleted && completionData ? (
+              <View style={styles.completedSummaryHeader}>
+                <Text style={styles.completedSummaryText}>
+                  Materials used in your completed cost estimation
+                </Text>
+                <Text style={styles.completedSummaryDate}>
+                  Completed: {new Date(completionData.completed_at).toLocaleDateString()}
                 </Text>
               </View>
-            </View>
+            ) : (
+              <Text style={styles.sectionSubtitle}>Select materials and specify quantities for cost estimation</Text>
+            )}
+
+            {/* Show completed materials if plan is completed, otherwise show current selection */}
+            {(isCompleted ? completedMaterials : selectedMaterials).length > 0 ? (
+              <View style={styles.summaryTable}>
+                <View style={styles.summaryTableHeader}>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Material</Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>Qty</Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>Price</Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>Total</Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableCategory]}>Category</Text>
+                </View>
+
+                {(isCompleted ? completedMaterials : selectedMaterials).map((material, index) => (
+                  <View key={index} style={styles.summaryTableRow}>
+                    <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]} numberOfLines={1}>
+                      {material.material_name}
+                    </Text>
+                    <Text style={[styles.summaryTableCell, styles.summaryTableQty]}>{material.quantity}</Text>
+                    <Text style={[styles.summaryTableCell, styles.summaryTablePrice]}>
+                      {formatCurrency(material.price, currency)}
+                    </Text>
+                    <Text style={[styles.summaryTableCell, styles.summaryTableTotal]}>
+                      {formatCurrency(isCompleted ? material.total_price : (material.price * material.quantity), currency)}
+                    </Text>
+                    <Text style={[styles.summaryTableCell, styles.summaryTableCategory]}>{material.category || "—"}</Text>
+                  </View>
+                ))}
+
+                <View style={styles.summaryTableFooter}>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableMaterial]}>Total Estimated Cost</Text>
+                  <Text style={[styles.summaryTableCell, styles.summaryTableTotal, styles.summaryTableTotalValue]}>
+                    {formatCurrency(totalEstimatedCost, currency)}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.emptyMaterialsSummary}>
+                <Ionicons name="construct-outline" size={32} color="#B4D4FF" />
+                <Text style={styles.emptyMaterialsText}>
+                  {isCompleted ? "No materials data available for this completed plan" : "No materials selected yet"}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Action Buttons */}
@@ -2485,6 +2583,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     borderWidth: 1,
+    borderColor: "#176BB7",
   },
   budgetStatusText: {
     fontWeight: "600",
@@ -3441,6 +3540,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#2E7D32",
+  },
+  completedSummaryHeader: {
+    backgroundColor: "#E8F5E8",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  completedSummaryText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2E7D32",
+    marginBottom: 4,
+  },
+  completedSummaryDate: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
+  },
+  emptyMaterialsSummary: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    backgroundColor: "#F8FAFF",
+    borderRadius: 8,
+  },
+  emptyMaterialsText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 8,
   },
 })
 
