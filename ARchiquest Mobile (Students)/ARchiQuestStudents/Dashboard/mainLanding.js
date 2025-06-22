@@ -1,21 +1,6 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  ScrollView,
-  Animated,
-  Dimensions,
-  Alert,
-  SafeAreaView,
-  Platform,
-  StatusBar,
-  RefreshControl,
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal,
+  ScrollView, Animated, Dimensions, Alert, SafeAreaView, Platform, StatusBar, RefreshControl,
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
@@ -696,31 +681,6 @@ const MainLanding = () => {
           </ScrollView>
         </Animated.View>
 
-        {/* Enhanced Mobile Bottom Navigation */}
-        <LinearGradient colors={["#FFFFFF", "#F8FAFC"]} style={styles.mobileBottomNav}>
-          <TouchableOpacity style={styles.mobileNavItem}>
-            <Ionicons name="home" size={24} color="#4F46E5" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.mobileNavItem}>
-            <Ionicons name="person-outline" size={24} color="#64748B" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.mobileAddButton} onPress={() => setIsJoinModalVisible(true)}>
-            <LinearGradient colors={["#4F46E5", "#7C3AED"]} style={styles.mobileAddButtonGradient}>
-              <Ionicons name="add" size={24} color="#FFFFFF" />
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.mobileNavItem} onPress={() => navigation.navigate("ReadingMaterials")}>
-            <Ionicons name="book-outline" size={24} color="#64748B" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.mobileNavItem}>
-            <Ionicons name="settings-outline" size={24} color="#64748B" />
-          </TouchableOpacity>
-        </LinearGradient>
-
         {/* Enhanced Mobile Side Navigation */}
         {isSideNavVisible && (
           <View style={styles.sideNavOverlay}>
@@ -731,19 +691,15 @@ const MainLanding = () => {
               style={styles.sideNavBackdrop}
             />
 
-
             <Animated.View style={[styles.mobileSideNav, { transform: [{ translateX: slideAnim }] }]}>
               <LinearGradient colors={["#4F46E5", "#7C3AED"]} style={styles.mobileSideNavHeader}>
-                <TouchableOpacity style={styles.mobileSideNavClose} onPress={() => setIsSideNavVisible(false)}>
-                  <Ionicons name="close" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
                 <Text style={styles.mobileSideNavTitle}>ARchiQuest</Text>
               </LinearGradient>
 
 
               <View style={styles.mobileSideNavContent}>
                 <TouchableOpacity style={styles.mobileSideNavItem}
-                onPress={() => navigation.navigate("Profile")}
+                onPress={() => navigation.navigate("StudentProfile")}
                 >
                   <Ionicons name="person" size={24} color="#4F46E5" />
                   <Text style={styles.mobileSideNavText}>Profile</Text>
@@ -858,7 +814,7 @@ const MainLanding = () => {
           </TouchableOpacity>
 
 
-          <TouchableOpacity style={styles.sidebarMenuItem} onPress={() => navigation.navigate("Profile")}>
+          <TouchableOpacity style={styles.sidebarMenuItem} onPress={() => navigation.navigate("StudentProfile")}>
             <Ionicons name="person-outline" size={24} color="#64748B" />
 
           </TouchableOpacity>
@@ -1439,34 +1395,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // Join class card styles
-  joinClassCard: {
-    width: "48%",
-    height: 140,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#E2E8F0",
-    borderStyle: "dashed",
-  },
-  joinClassContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 14,
-  },
-  joinClassIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  joinClassText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4F46E5",
-  },
+ 
 
   // Empty state styles
   emptyState: {
@@ -1860,8 +1789,7 @@ const styles = StyleSheet.create({
     elevation: 15,
   },
   mobileSideNavHeader: {
-    height: 120,
-    flexDirection: "row",
+    height: '11%',
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,

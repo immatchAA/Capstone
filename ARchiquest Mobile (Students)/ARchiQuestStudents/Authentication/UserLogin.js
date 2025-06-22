@@ -356,7 +356,7 @@ const EnhancedUserLogin = ({ navigation }) => {
         
 
         // For demo purposes
-        navigation.navigate("MainLanding")
+        navigation.navigate("MainTabs")
       } catch (error) {
         alert("An unexpected error occurred. Please try again.")
         console.error(error)

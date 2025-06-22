@@ -26,7 +26,7 @@ function ClassKeyList() {
 
   const fetchStudents = async (teacherId) => {
     const { data: classes, error: classesError } = await supabase
-      .from('classes')
+      .from('class_keys')
       .select('id, class_key')
       .eq('teacher_id', teacherId);
 
