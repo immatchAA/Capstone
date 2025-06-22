@@ -14,6 +14,7 @@ import DesignPlanDetails from './DesignPlan/DesignPlanDetails';
 import DesignProgressScreen from './DesignPlan/DesignProgressScreen';
 import DesignPlanViewer from './DesignPlan/DesignPlanViewer';
 import ReadingMaterialDetails from './ReadingMaterials/ReadingMaterialDetails';
+import StudentProfile from './Profile/StudentProfile';
 
 const Stack = createStackNavigator();
 

@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../supabaseClient';
 
-const Profile = ({ navigation }) => {
+const StudentProfile = ({ navigation }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [savedMaterials, setSavedMaterials] = useState([]);
@@ -397,4 +397,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Profile;
+export default StudentProfile;
