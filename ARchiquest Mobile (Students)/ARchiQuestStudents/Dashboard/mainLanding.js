@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -45,6 +46,15 @@ const MainLanding = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
   const headerAnim = useRef(new Animated.Value(-100)).current
+
+
+  const onRefresh = async () => {
+  setRefreshing(true);
+  await fetchStudentName();
+  await fetchActiveClasses();
+  setRefreshing(false);
+};
+
 
   useEffect(() => {
     fetchStudentName()
@@ -553,6 +563,7 @@ const MainLanding = () => {
                   <View style={styles.notificationBadge} />
                 </TouchableOpacity>
 
+
                 <TouchableOpacity style={styles.mobileMenuButton} onPress={() => setIsSideNavVisible(true)}>
                   <Ionicons name="menu" size={24} color="rgba(255, 255, 255, 0.9)" />
                 </TouchableOpacity>
@@ -578,6 +589,7 @@ const MainLanding = () => {
                 style={styles.statCard}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
+
               >
                 <Ionicons name="school" size={20} color="#FFFFFF" />
                 <Text style={styles.statNumber}>{activeClasses.length}</Text>
@@ -614,6 +626,7 @@ const MainLanding = () => {
                   <Ionicons name="add" size={16} color="#FFFFFF" />
                 </LinearGradient>
               </TouchableOpacity>
+
             </View>
 
             {isLoading ? (
@@ -719,11 +732,13 @@ const MainLanding = () => {
         {/* Enhanced Mobile Side Navigation */}
         {isSideNavVisible && (
           <View style={styles.sideNavOverlay}>
+
             <TouchableOpacity
               activeOpacity={1}
               onPress={() => setIsSideNavVisible(false)}
               style={styles.sideNavBackdrop}
             />
+
 
             <Animated.View style={[styles.mobileSideNav, { transform: [{ translateX: slideAnim }] }]}>
               <LinearGradient colors={["#4F46E5", "#7C3AED"]} style={styles.mobileSideNavHeader}>
@@ -733,11 +748,13 @@ const MainLanding = () => {
                 <Text style={styles.mobileSideNavTitle}>ARchiQuest</Text>
               </LinearGradient>
 
+
               <View style={styles.mobileSideNavContent}>
                 <TouchableOpacity style={styles.mobileSideNavItem}>
                   <Ionicons name="person" size={24} color="#4F46E5" />
                   <Text style={styles.mobileSideNavText}>Profile</Text>
                 </TouchableOpacity>
+
 
                 <TouchableOpacity
                   style={styles.mobileSideNavItem}
@@ -746,6 +763,8 @@ const MainLanding = () => {
                   <Ionicons name="book" size={24} color="#4F46E5" />
                   <Text style={styles.mobileSideNavText}>Reading Materials</Text>
                 </TouchableOpacity>
+
+
 
                 <TouchableOpacity style={styles.mobileSideNavItem}>
                   <Ionicons name="settings" size={24} color="#4F46E5" />
@@ -842,8 +861,10 @@ const MainLanding = () => {
             <Ionicons name="home" size={24} color="#4F46E5" />
           </TouchableOpacity>
 
+
           <TouchableOpacity style={styles.sidebarMenuItem}>
             <Ionicons name="person-outline" size={24} color="#64748B" />
+
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.sidebarMenuItem} onPress={() => navigation.navigate("ReadingMaterials")}>
@@ -856,6 +877,8 @@ const MainLanding = () => {
 
           <TouchableOpacity style={styles.sidebarMenuItem}>
             <Ionicons name="settings-outline" size={24} color="#64748B" />
+
+
           </TouchableOpacity>
 
           <TouchableOpacity

@@ -92,9 +92,9 @@ function ClassKeyList() {
     }));
   };
 
-const handleStudentClick = () => {
+const handleStudentClick = (student) => {
   // Navigate to general student progress detail page
-  navigate('/studentProgressDetail');
+  navigate(`/studentProgressDetail/${student.id}`);
 };
 
   return (
@@ -129,7 +129,7 @@ const handleStudentClick = () => {
                         <div 
                           key={i} 
                           className="student-item"
-                          onClick={handleStudentClick}
+                          onClick={() => handleStudentClick(student)}
                         >
                           <div className="student-info">
                             <span className="student-name">

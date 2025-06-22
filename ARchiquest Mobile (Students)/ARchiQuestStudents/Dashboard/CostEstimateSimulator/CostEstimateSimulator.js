@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#006064',
+    backgroundColor: '#176B87',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     color: '#006064',
   },
   continueButton: {
-    backgroundColor: '#006064',
+    backgroundColor: '#176B87',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 15,
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   viewDetailsText: {
-    color: '#006064',
+    color: '#176B87',
     fontWeight: 'bold',
   },
   tabsContainer: {
