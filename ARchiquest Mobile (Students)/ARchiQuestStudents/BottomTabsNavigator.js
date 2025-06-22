@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from './supabaseClient';
 
 import MainLanding from './Dashboard/mainLanding';
-import Profile from './Profile/Profile';
+import Profile from './Profile/StudentProfile';
 import ReadingMaterials from './ReadingMaterials/ReadingMaterials';
 import Settings from './Settings/Settings';
 
